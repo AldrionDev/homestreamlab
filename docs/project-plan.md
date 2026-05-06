@@ -133,7 +133,7 @@ homestreamlab/
 ├── docs/
 ├── README.md
 └── .gitignore
-````
+```
 
 ### Backend Structure
 
@@ -181,8 +181,8 @@ The first database version should stay minimal.
 
 Planned models:
 
-* User
-* MediaItem
+- User
+- MediaItem
 
 ### User
 
@@ -190,11 +190,11 @@ The `User` model should store basic account data.
 
 Planned fields:
 
-* id
-* email
-* passwordHash
-* createdAt
-* updatedAt
+- id
+- email
+- passwordHash
+- createdAt
+- updatedAt
 
 ### MediaItem
 
@@ -202,19 +202,19 @@ The `MediaItem` model should store metadata about uploaded files.
 
 Planned fields:
 
-* id
-* title
-* description
-* type
-* category
-* filename
-* originalFilename
-* mimeType
-* size
-* filePath
-* ownerId
-* createdAt
-* updatedAt
+- id
+- title
+- description
+- type
+- category
+- filename
+- originalFilename
+- mimeType
+- size
+- filePath
+- ownerId
+- createdAt
+- updatedAt
 
 The actual file will be stored locally in the backend during the first MVP.
 
@@ -222,23 +222,23 @@ The actual file will be stored locally in the backend during the first MVP.
 
 ### Public Pages
 
-* Landing page
-* Login page
-* Register page
+- Landing page
+- Login page
+- Register page
 
 ### Protected Pages
 
-* Media library page
-* Upload media page
-* Media detail page
+- Media library page
+- Upload media page
+- Media detail page
 
 ### Media Viewing
 
 The media detail page should support simple viewing for:
 
-* videos
-* documents
-* photos
+- videos
+- documents
+- photos
 
 The first version should be simple. Advanced preview generation, thumbnails, and file processing are not part of the MVP.
 
@@ -290,10 +290,10 @@ Set up the repository, base folders, README, and project planning documentation.
 
 Includes:
 
-* initial monorepo structure
-* root README
-* project plan document
-* GitHub milestones and issues
+- initial monorepo structure
+- root README
+- project plan document
+- GitHub milestones and issues
 
 ### Milestone 2 — Backend Foundation
 
@@ -303,11 +303,11 @@ Create the initial NestJS backend and local database setup.
 
 Includes:
 
-* NestJS backend initialization
-* PostgreSQL Docker Compose setup
-* Prisma installation
-* Prisma configuration
-* health check endpoint
+- NestJS backend initialization
+- PostgreSQL Docker Compose setup
+- Prisma installation
+- Prisma configuration
+- health check endpoint
 
 ### Milestone 3 — Authentication
 
@@ -317,12 +317,12 @@ Add simple JWT-based authentication.
 
 Includes:
 
-* user registration
-* user login
-* password hashing
-* JWT generation
-* JWT guard
-* protected endpoint example
+- user registration
+- user login
+- password hashing
+- JWT generation
+- JWT guard
+- protected endpoint example
 
 ### Milestone 4 — Media Backend
 
@@ -332,13 +332,13 @@ Add backend support for media metadata and local file uploads.
 
 Includes:
 
-* MediaItem Prisma model
-* media module
-* upload endpoint
-* list endpoint
-* detail endpoint
-* file serving endpoint
-* delete endpoint
+- MediaItem Prisma model
+- media module
+- upload endpoint
+- list endpoint
+- detail endpoint
+- file serving endpoint
+- delete endpoint
 
 ### Milestone 5 — Frontend Foundation
 
@@ -348,11 +348,11 @@ Create the initial React frontend structure.
 
 Includes:
 
-* React + Vite + TypeScript setup
-* Tailwind CSS setup
-* shadcn/ui setup
-* React Router setup
-* basic layout setup
+- React + Vite + TypeScript setup
+- Tailwind CSS setup
+- shadcn/ui setup
+- React Router setup
+- basic layout setup
 
 ### Milestone 6 — Frontend Authentication
 
@@ -362,11 +362,11 @@ Build login and registration UI and connect it to the backend.
 
 Includes:
 
-* register page
-* login page
-* auth API integration
-* local JWT handling for the MVP
-* protected routes
+- register page
+- login page
+- auth API integration
+- local JWT handling for the MVP
+- protected routes
 
 ### Milestone 7 — Media Frontend
 
@@ -376,14 +376,14 @@ Build the main media library user experience.
 
 Includes:
 
-* protected app layout
-* media grid
-* upload page
-* media detail page
-* video viewer
-* document viewer
-* photo viewer
-* delete media action
+- protected app layout
+- media grid
+- upload page
+- media detail page
+- video viewer
+- document viewer
+- photo viewer
+- delete media action
 
 ### Milestone 8 — Polish, Documentation & Demo Preparation
 
@@ -393,25 +393,25 @@ Prepare the project for portfolio and interview presentation.
 
 Includes:
 
-* README cleanup
-* screenshots or demo notes
-* API documentation
-* manual test checklist
-* final code cleanup
-* final MVP review
+- README cleanup
+- screenshots or demo notes
+- API documentation
+- manual test checklist
+- final code cleanup
+- final MVP review
 
 ## Development Principles
 
 The project should follow these principles:
 
-* keep the first MVP simple
-* avoid overengineering
-* avoid unnecessary abstractions
-* prefer readable code over clever code
-* build one milestone at a time
-* keep features small and testable
-* document important decisions
-* focus on a project that is easy to explain in interviews
+- keep the first MVP simple
+- avoid overengineering
+- avoid unnecessary abstractions
+- prefer readable code over clever code
+- build one milestone at a time
+- keep features small and testable
+- document important decisions
+- focus on a project that is easy to explain in interviews
 
 ## Notes
 
