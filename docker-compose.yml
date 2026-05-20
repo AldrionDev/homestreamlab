@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: homestreamlab-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: homestreamlab
+      POSTGRES_USER: homestreamlab_user
+      POSTGRES_PASSWORD: homestreamlab_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - homestreamlab_postgres_data:/var/lib/postgresql/data
+volumes:
+  homestreamlab_postgres_data:
