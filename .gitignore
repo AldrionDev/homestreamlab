@@ -61,5 +61,6 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Local helper scripts
+# Local helper scripts/files
 scripts/
+CLAUDE.md
