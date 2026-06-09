@@ -14,10 +14,10 @@ Completed:
 - Milestone 2 — Backend Foundation
 - Milestone 3 — Database Models
 - Milestone 4 — Authentication Backend
+- Milestone 5 — Media Backend
 
 Next:
 
-- Milestone 5 — Media Backend
 - Milestone 6 — Local File Upload Backend
 - Milestone 7 — Frontend Foundation
 - Milestone 8 — Frontend Authentication
@@ -86,7 +86,7 @@ NestJS REST API
     +--> PostgreSQL
     |
     +--> Local uploads folder
-````
+```
 
 ## Local Setup
 
@@ -309,19 +309,19 @@ homestreamlab/
 
 Not part of the first MVP:
 
-* AWS S3 storage
-* Terraform infrastructure
-* Dockerized full application
-* EKS deployment
-* RDS PostgreSQL
-* CloudFront
-* Thumbnail generation
-* Admin dashboard
-* Sharing links
-* Refresh tokens
-* Role-based access control
-* Background workers
-* FFmpeg processing
+- AWS S3 storage
+- Terraform infrastructure
+- Dockerized full application
+- EKS deployment
+- RDS PostgreSQL
+- CloudFront
+- Thumbnail generation
+- Admin dashboard
+- Sharing links
+- Refresh tokens
+- Role-based access control
+- Background workers
+- FFmpeg processing
 
 ## Project Purpose
 
