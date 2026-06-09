@@ -42,7 +42,12 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 
 # NestJS / backend local files
-backend/uploads/
+backend/uploads/videos/*
+!backend/uploads/videos/.gitkeep
+backend/uploads/documents/*
+!backend/uploads/documents/.gitkeep
+backend/uploads/photos/*
+!backend/uploads/photos/.gitkeep
 backend/tmp/
 
 # Prisma local artifacts
