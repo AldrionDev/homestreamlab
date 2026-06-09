@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { GetMediaQueryDto } from './dto/get-media-query.dto';
+import { UpdateMediaDto } from './dto/update-media.dto';
 
 @Injectable()
 export class MediaService {
@@ -12,6 +13,18 @@ export class MediaService {
     });
     if (!item) throw new NotFoundException('Media item not found');
     return item;
+  }
+
+  async update(userId: string, id: string, dto: UpdateMediaDto) {
+    const item = await this.prisma.mediaItem.findFirst({
+      where: { id, uploadedById: userId },
+    });
+    if (!item) throw new NotFoundException('Media item not found');
+
+    return this.prisma.mediaItem.update({
+      where: { id },
+      data: dto,
+    });
   }
 
   findAll(userId: string, query: GetMediaQueryDto) {
