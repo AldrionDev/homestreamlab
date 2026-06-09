@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -31,6 +32,12 @@ export class MediaController {
     @Body() dto: UpdateMediaDto,
   ) {
     return this.mediaService.update(user.id, id, dto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  remove(@CurrentUser() user: { id: string }, @Param('id') id: string) {
+    return this.mediaService.remove(user.id, id);
   }
 
   @UseGuards(JwtAuthGuard)

@@ -27,6 +27,15 @@ export class MediaService {
     });
   }
 
+  async remove(userId: string, id: string) {
+    const item = await this.prisma.mediaItem.findFirst({
+      where: { id, uploadedById: userId },
+    });
+    if (!item) throw new NotFoundException('Media item not found');
+
+    return this.prisma.mediaItem.delete({ where: { id } });
+  }
+
   findAll(userId: string, query: GetMediaQueryDto) {
     const { type, search } = query;
     return this.prisma.mediaItem.findMany({
