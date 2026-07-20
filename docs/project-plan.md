@@ -415,6 +415,6 @@ The project should follow these principles:
 
 ## Notes
 
-HomeStreamLab is a learning and portfolio project.
+HomeStreamLab is a portfolio project.
 
 The goal is not to build a production-grade streaming platform. The goal is to build a clean, realistic, understandable full-stack application that demonstrates backend, frontend, database, authentication, upload, and basic media browsing skills.
