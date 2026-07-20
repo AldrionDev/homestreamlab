@@ -1,5 +1,6 @@
 import { join } from 'path';
 import { diskStorage } from 'multer';
+import { BadRequestException } from '@nestjs/common';
 import { MediaType } from '@prisma/client';
 import {
   generateUniqueFilename,
@@ -8,16 +9,16 @@ import {
 
 // Assumes backend scripts (start:dev, start, etc.) are run from the `backend/`
 // directory, which matches the current local development workflow.
-const UPLOADS_ROOT = join(process.cwd(), 'uploads');
+export const UPLOADS_ROOT = join(process.cwd(), 'uploads');
 
 export const mediaDiskStorage = diskStorage({
   destination: (req, _file, cb) => {
+    const body = req.body as { type?: MediaType } | undefined;
     try {
-      const body = req.body as { type?: MediaType } | undefined;
       const folder = resolveMediaTypeFolder(body?.type as MediaType);
       cb(null, join(UPLOADS_ROOT, folder));
-    } catch (error) {
-      cb(error as Error, '');
+    } catch {
+      cb(new BadRequestException('Invalid or missing media type'), '');
     }
   },
   filename: (_req, file, cb) => {

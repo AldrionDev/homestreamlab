@@ -283,7 +283,7 @@ GET /health
 
 ### Media
 
-Planned for upcoming milestones:
+JWT-protected, scoped to the authenticated user's own media items:
 
 ```http
 GET    /media
@@ -292,6 +292,18 @@ POST   /media/upload
 PATCH  /media/:id
 DELETE /media/:id
 ```
+
+`POST /media/upload` accepts a `multipart/form-data` body:
+
+- `file` — the media file
+- `title` — required
+- `type` — required, one of `VIDEO` / `DOCUMENT` / `PHOTO`
+- `description` — optional
+- `category` — optional
+
+The `type` field must be sent before `file` in the form. Multer resolves the
+storage folder while it is still parsing the multipart stream, so it only
+sees fields that arrived earlier in the request.
 
 ## Repository Structure
 
