@@ -1,5 +1,6 @@
 import { MediaType } from '@prisma/client';
 import {
+  buildFileUrl,
   generateUniqueFilename,
   getAllowedExtensions,
   getMaxFileSizeBytes,
@@ -133,5 +134,19 @@ describe('isWithinFileSizeLimit', () => {
 
   it('returns false for an unsupported type', () => {
     expect(isWithinFileSizeLimit('AUDIO' as MediaType, 1)).toBe(false);
+  });
+});
+
+describe('buildFileUrl', () => {
+  it('prefixes the relative path with /uploads', () => {
+    expect(buildFileUrl('photos/example.jpg')).toBe(
+      '/uploads/photos/example.jpg',
+    );
+  });
+
+  it('converts backslashes to forward slashes', () => {
+    expect(buildFileUrl('photos\\example.jpg')).toBe(
+      '/uploads/photos/example.jpg',
+    );
   });
 });

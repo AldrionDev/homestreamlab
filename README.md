@@ -313,6 +313,17 @@ Maximum upload size per type:
 
 Uploads exceeding the limit for the selected type are rejected with `400 Bad Request`.
 
+`GET /media`, `GET /media/:id`, `POST /media/upload` and `PATCH /media/:id`
+responses include a `fileUrl` field (e.g. `/uploads/photos/<uuid>.jpg`) that
+points directly at the stored file.
+
+Uploaded files are served locally from `/uploads/...` as a static file mount
+(`backend/uploads` mapped to `/uploads`). This is an MVP/local-development
+approach: file requests under `/uploads` are **not** JWT-protected, so anyone
+who knows or guesses a `fileUrl` can access the file. This is intentional for
+the local MVP scope and will be replaced with protected/signed file endpoints
+in a future milestone.
+
 ## Repository Structure
 
 ```txt

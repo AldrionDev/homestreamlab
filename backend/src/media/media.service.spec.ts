@@ -20,12 +20,47 @@ function buildFile(overrides: Partial<Express.Multer.File> = {}) {
   } as Express.Multer.File;
 }
 
+function buildMediaItem(overrides: Record<string, unknown> = {}) {
+  return {
+    id: 'media-1',
+    title: 'Holiday',
+    description: 'Beach trip',
+    type: MediaType.PHOTO,
+    category: 'travel',
+    originalName: 'holiday-photo.jpg',
+    fileName: 'generated-unique-name.jpg',
+    mimeType: 'image/jpeg',
+    sizeBytes: 1024,
+    filePath: join('photos', 'generated-unique-name.jpg'),
+    uploadedById: 'user-1',
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    ...overrides,
+  };
+}
+
 describe('MediaService', () => {
   let service: MediaService;
-  let prisma: { mediaItem: { create: jest.Mock } };
+  let prisma: {
+    mediaItem: {
+      create: jest.Mock;
+      findFirst: jest.Mock;
+      update: jest.Mock;
+      delete: jest.Mock;
+      findMany: jest.Mock;
+    };
+  };
 
   beforeEach(() => {
-    prisma = { mediaItem: { create: jest.fn() } };
+    prisma = {
+      mediaItem: {
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+        delete: jest.fn(),
+        findMany: jest.fn(),
+      },
+    };
     service = new MediaService(prisma as unknown as PrismaService);
   });
 
@@ -38,6 +73,7 @@ describe('MediaService', () => {
         type: MediaType.PHOTO,
         category: 'travel',
       };
+      prisma.mediaItem.create.mockResolvedValue(buildMediaItem());
 
       await service.create('user-1', file, dto);
 
@@ -60,6 +96,7 @@ describe('MediaService', () => {
     it('links the media item to the authenticated user, not a body-supplied value', async () => {
       const file = buildFile();
       const dto = { title: 'Holiday', type: MediaType.PHOTO };
+      prisma.mediaItem.create.mockResolvedValue(buildMediaItem());
 
       await service.create('authenticated-user', file, dto);
 
@@ -70,6 +107,62 @@ describe('MediaService', () => {
           }) as Record<string, unknown>,
         }),
       );
+    });
+
+    it('includes a fileUrl derived from the stored filePath', async () => {
+      const file = buildFile();
+      const dto = { title: 'Holiday', type: MediaType.PHOTO };
+      prisma.mediaItem.create.mockResolvedValue(buildMediaItem());
+
+      const result = await service.create('user-1', file, dto);
+
+      expect(result.fileUrl).toBe('/uploads/photos/generated-unique-name.jpg');
+    });
+  });
+
+  describe('findOne', () => {
+    it('includes fileUrl in the returned media item', async () => {
+      prisma.mediaItem.findFirst.mockResolvedValue(buildMediaItem());
+
+      const result = await service.findOne('user-1', 'media-1');
+
+      expect(result.fileUrl).toBe('/uploads/photos/generated-unique-name.jpg');
+    });
+  });
+
+  describe('update', () => {
+    it('includes fileUrl in the returned media item', async () => {
+      prisma.mediaItem.findFirst.mockResolvedValue(buildMediaItem());
+      prisma.mediaItem.update.mockResolvedValue(
+        buildMediaItem({ title: 'Updated title' }),
+      );
+
+      const result = await service.update('user-1', 'media-1', {
+        title: 'Updated title',
+      });
+
+      expect(result.title).toBe('Updated title');
+      expect(result.fileUrl).toBe('/uploads/photos/generated-unique-name.jpg');
+    });
+  });
+
+  describe('findAll', () => {
+    it('includes fileUrl on every item in the returned list', async () => {
+      prisma.mediaItem.findMany.mockResolvedValue([
+        buildMediaItem({ id: 'media-1' }),
+        buildMediaItem({
+          id: 'media-2',
+          filePath: join('videos', 'other-file.mp4'),
+        }),
+      ]);
+
+      const result = await service.findAll('user-1', {});
+
+      expect(result).toHaveLength(2);
+      expect(result[0].fileUrl).toBe(
+        '/uploads/photos/generated-unique-name.jpg',
+      );
+      expect(result[1].fileUrl).toBe('/uploads/videos/other-file.mp4');
     });
   });
 });

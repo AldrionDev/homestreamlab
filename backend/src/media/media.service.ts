@@ -1,17 +1,29 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { MediaItem } from '@prisma/client';
 import { relative } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { GetMediaQueryDto } from './dto/get-media-query.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
+import { buildFileUrl } from './storage/media-storage.helper';
 import { UPLOADS_ROOT } from './storage/media-storage.config';
+
+type MediaItemResponse = MediaItem & { fileUrl: string };
 
 @Injectable()
 export class MediaService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(userId: string, file: Express.Multer.File, dto: CreateMediaDto) {
-    return this.prisma.mediaItem.create({
+  private toResponse(item: MediaItem): MediaItemResponse {
+    return { ...item, fileUrl: buildFileUrl(item.filePath) };
+  }
+
+  async create(
+    userId: string,
+    file: Express.Multer.File,
+    dto: CreateMediaDto,
+  ): Promise<MediaItemResponse> {
+    const item = await this.prisma.mediaItem.create({
       data: {
         title: dto.title,
         description: dto.description,
@@ -25,26 +37,32 @@ export class MediaService {
         uploadedById: userId,
       },
     });
+    return this.toResponse(item);
   }
 
-  async findOne(userId: string, id: string) {
+  async findOne(userId: string, id: string): Promise<MediaItemResponse> {
     const item = await this.prisma.mediaItem.findFirst({
       where: { id, uploadedById: userId },
     });
     if (!item) throw new NotFoundException('Media item not found');
-    return item;
+    return this.toResponse(item);
   }
 
-  async update(userId: string, id: string, dto: UpdateMediaDto) {
+  async update(
+    userId: string,
+    id: string,
+    dto: UpdateMediaDto,
+  ): Promise<MediaItemResponse> {
     const item = await this.prisma.mediaItem.findFirst({
       where: { id, uploadedById: userId },
     });
     if (!item) throw new NotFoundException('Media item not found');
 
-    return this.prisma.mediaItem.update({
+    const updated = await this.prisma.mediaItem.update({
       where: { id },
       data: dto,
     });
+    return this.toResponse(updated);
   }
 
   async remove(userId: string, id: string) {
@@ -56,9 +74,12 @@ export class MediaService {
     return this.prisma.mediaItem.delete({ where: { id } });
   }
 
-  findAll(userId: string, query: GetMediaQueryDto) {
+  async findAll(
+    userId: string,
+    query: GetMediaQueryDto,
+  ): Promise<MediaItemResponse[]> {
     const { type, search } = query;
-    return this.prisma.mediaItem.findMany({
+    const items = await this.prisma.mediaItem.findMany({
       where: {
         uploadedById: userId,
         ...(type && { type }),
@@ -66,5 +87,6 @@ export class MediaService {
       },
       orderBy: { createdAt: 'desc' },
     });
+    return items.map((item) => this.toResponse(item));
   }
 }
