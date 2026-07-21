@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { ApiError, api } from './api-client'
+import { ApiError, api, buildAssetUrl } from './api-client'
 
 function jsonResponse(body: unknown, status = 200) {
   const hasBody = body !== undefined && status !== 204
@@ -105,6 +105,20 @@ describe('api-client', () => {
 
     await expect(api.get('/media/999')).rejects.toMatchObject(
       new ApiError('Not found', 404, { message: 'Not found' }),
+    )
+  })
+})
+
+describe('buildAssetUrl', () => {
+  it('joins VITE_API_URL with a leading-slash asset path', () => {
+    expect(buildAssetUrl('/uploads/photos/x.jpg')).toBe(
+      'http://localhost:3000/uploads/photos/x.jpg',
+    )
+  })
+
+  it('normalizes a path without a leading slash', () => {
+    expect(buildAssetUrl('uploads/photos/x.jpg')).toBe(
+      'http://localhost:3000/uploads/photos/x.jpg',
     )
   })
 })
