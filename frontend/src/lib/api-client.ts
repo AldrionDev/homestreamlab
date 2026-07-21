@@ -26,14 +26,16 @@ async function request<T>(method: string, path: string, body?: unknown): Promise
     headers['Authorization'] = `Bearer ${accessToken}`
   }
 
-  if (body !== undefined) {
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData
+
+  if (body !== undefined && !isFormData) {
     headers['Content-Type'] = 'application/json'
   }
 
   const res = await fetch(buildUrl(path), {
     method,
     headers,
-    body: body !== undefined ? JSON.stringify(body) : undefined,
+    body: isFormData ? body : body !== undefined ? JSON.stringify(body) : undefined,
   })
 
   const text = await res.text()
