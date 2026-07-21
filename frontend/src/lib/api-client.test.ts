@@ -70,6 +70,20 @@ describe('api-client', () => {
     expect(init?.body).toBe(JSON.stringify({ title: 'test' }))
   })
 
+  it('sends FormData bodies as-is without Content-Type or JSON-encoding', async () => {
+    vi.mocked(fetch).mockResolvedValue(jsonResponse({ id: 1 }))
+
+    const formData = new FormData()
+    formData.append('title', 'test')
+
+    await api.post('/media/upload', formData)
+
+    const [, init] = vi.mocked(fetch).mock.calls[0]
+    const headers = init?.headers as Record<string, string>
+    expect(headers['Content-Type']).toBeUndefined()
+    expect(init?.body).toBe(formData)
+  })
+
   it('parses a successful JSON response', async () => {
     vi.mocked(fetch).mockResolvedValue(jsonResponse({ id: 1, title: 'test' }))
 
