@@ -324,6 +324,11 @@ who knows or guesses a `fileUrl` can access the file. This is intentional for
 the local MVP scope and will be replaced with protected/signed file endpoints
 in a future milestone.
 
+`DELETE /media/:id` also removes the media item's local file from disk. If the
+file is already missing, deletion still succeeds and the database record is
+removed; if the file cannot be deleted for another reason, the request fails
+and the database record is kept.
+
 ## Repository Structure
 
 ```txt
