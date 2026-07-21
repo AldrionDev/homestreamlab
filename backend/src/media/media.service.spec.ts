@@ -1,8 +1,13 @@
 import { join } from 'path';
+import { unlink } from 'fs/promises';
 import { MediaType } from '@prisma/client';
 import { MediaService } from './media.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { UPLOADS_ROOT } from './storage/media-storage.config';
+
+jest.mock('fs/promises');
+
+const mockUnlink = unlink as jest.MockedFunction<typeof unlink>;
 
 function buildFile(overrides: Partial<Express.Multer.File> = {}) {
   return {
@@ -62,6 +67,7 @@ describe('MediaService', () => {
       },
     };
     service = new MediaService(prisma as unknown as PrismaService);
+    mockUnlink.mockReset().mockResolvedValue(undefined);
   });
 
   describe('create', () => {
@@ -143,6 +149,67 @@ describe('MediaService', () => {
 
       expect(result.title).toBe('Updated title');
       expect(result.fileUrl).toBe('/uploads/photos/generated-unique-name.jpg');
+    });
+  });
+
+  describe('remove', () => {
+    it('deletes the local file before deleting the database record', async () => {
+      prisma.mediaItem.findFirst.mockResolvedValue(buildMediaItem());
+      prisma.mediaItem.delete.mockResolvedValue(buildMediaItem());
+
+      await service.remove('user-1', 'media-1');
+
+      expect(mockUnlink).toHaveBeenCalledWith(
+        join(UPLOADS_ROOT, join('photos', 'generated-unique-name.jpg')),
+      );
+      expect(prisma.mediaItem.delete).toHaveBeenCalledWith({
+        where: { id: 'media-1' },
+      });
+    });
+
+    it('deletes the database record even when the local file is already missing', async () => {
+      prisma.mediaItem.findFirst.mockResolvedValue(buildMediaItem());
+      prisma.mediaItem.delete.mockResolvedValue(buildMediaItem());
+      mockUnlink.mockRejectedValue(
+        Object.assign(new Error('missing'), { code: 'ENOENT' }),
+      );
+
+      await service.remove('user-1', 'media-1');
+
+      expect(prisma.mediaItem.delete).toHaveBeenCalledWith({
+        where: { id: 'media-1' },
+      });
+    });
+
+    it('does not delete the database record when local file deletion fails unexpectedly', async () => {
+      prisma.mediaItem.findFirst.mockResolvedValue(buildMediaItem());
+      const unlinkError = Object.assign(new Error('permission denied'), {
+        code: 'EACCES',
+      });
+      mockUnlink.mockRejectedValue(unlinkError);
+
+      await expect(service.remove('user-1', 'media-1')).rejects.toThrow(
+        unlinkError,
+      );
+
+      expect(prisma.mediaItem.delete).not.toHaveBeenCalled();
+    });
+
+    it('throws NotFoundException when the item does not belong to the user', async () => {
+      prisma.mediaItem.findFirst.mockResolvedValue(null);
+
+      await expect(service.remove('user-1', 'media-1')).rejects.toThrow(
+        'Media item not found',
+      );
+    });
+
+    it('does not delete the local file or database record when the item does not belong to the user', async () => {
+      prisma.mediaItem.findFirst.mockResolvedValue(null);
+
+      await expect(service.remove('user-1', 'media-1')).rejects.toThrow();
+
+      expect(mockUnlink).not.toHaveBeenCalled();
+      expect(prisma.mediaItem.delete).not.toHaveBeenCalled();
     });
   });
 

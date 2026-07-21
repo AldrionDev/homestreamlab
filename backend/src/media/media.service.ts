@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { MediaItem } from '@prisma/client';
-import { relative } from 'path';
+import { unlink } from 'fs/promises';
+import { join, relative } from 'path';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateMediaDto } from './dto/create-media.dto';
 import { GetMediaQueryDto } from './dto/get-media-query.dto';
@@ -16,6 +17,17 @@ export class MediaService {
 
   private toResponse(item: MediaItem): MediaItemResponse {
     return { ...item, fileUrl: buildFileUrl(item.filePath) };
+  }
+
+  private async deleteLocalFile(filePath: string): Promise<void> {
+    try {
+      await unlink(join(UPLOADS_ROOT, filePath));
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+        return;
+      }
+      throw error;
+    }
   }
 
   async create(
@@ -70,6 +82,8 @@ export class MediaService {
       where: { id, uploadedById: userId },
     });
     if (!item) throw new NotFoundException('Media item not found');
+
+    await this.deleteLocalFile(item.filePath);
 
     return this.prisma.mediaItem.delete({ where: { id } });
   }
