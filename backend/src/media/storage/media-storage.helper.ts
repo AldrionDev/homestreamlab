@@ -60,3 +60,8 @@ export function isWithinFileSizeLimit(type: MediaType, size: number): boolean {
   }
   return size <= maxSize;
 }
+
+export function buildFileUrl(filePath: string): string {
+  const normalizedPath = filePath.replace(/\\/g, '/');
+  return `/uploads/${normalizedPath}`;
+}
