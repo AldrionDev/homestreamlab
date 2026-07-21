@@ -18,6 +18,10 @@ function buildUrl(path: string): string {
   return `${base}${normalizedPath}`
 }
 
+export function buildAssetUrl(path: string): string {
+  return buildUrl(path)
+}
+
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
   const headers: Record<string, string> = {}
 
