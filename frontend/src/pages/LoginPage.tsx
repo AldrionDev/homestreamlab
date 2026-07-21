@@ -1,6 +1,8 @@
 import { useState } from "react"
 import { Link, useNavigate } from "react-router"
 import { ApiError, api } from "@/lib/api-client"
+import type { User } from "@/lib/auth-storage"
+import { useAuth } from "@/context/AuthContext"
 import { validateLoginForm } from "@/lib/login-validation"
 import { Button } from "@/components/ui/button"
 import {
@@ -15,15 +17,12 @@ import { Label } from "@/components/ui/label"
 
 interface LoginResponse {
   accessToken: string
-  user: {
-    id: string
-    email: string
-    displayName: string | null
-  }
+  user: User
 }
 
 function LoginPage() {
   const navigate = useNavigate()
+  const { login } = useAuth()
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
@@ -43,8 +42,7 @@ function LoginPage() {
 
     try {
       const result = await api.post<LoginResponse>("/auth/login", { email, password })
-      localStorage.setItem("accessToken", result.accessToken)
-      localStorage.setItem("authUser", JSON.stringify(result.user))
+      login(result.accessToken, result.user)
       navigate("/app")
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Something went wrong. Please try again.")
