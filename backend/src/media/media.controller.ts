@@ -23,8 +23,14 @@ import { UpdateMediaDto } from './dto/update-media.dto';
 import { mediaDiskStorage } from './storage/media-storage.config';
 import {
   getAllowedExtensions,
+  getMaxFileSizeBytes,
   isAllowedFileExtension,
+  isWithinFileSizeLimit,
 } from './storage/media-storage.helper';
+
+async function cleanupUploadedFile(file: Express.Multer.File): Promise<void> {
+  await unlink(file.path).catch(() => undefined);
+}
 
 @Controller('media')
 export class MediaController {
@@ -43,12 +49,21 @@ export class MediaController {
     }
 
     if (!isAllowedFileExtension(dto.type, file.originalname)) {
-      await unlink(file.path).catch(() => undefined);
+      await cleanupUploadedFile(file);
       const allowedExtensions = getAllowedExtensions(dto.type)
         .map((extension) => extension.replace('.', ''))
         .join(', ');
       throw new BadRequestException(
         `Invalid file extension for type ${dto.type}. Allowed extensions: ${allowedExtensions}.`,
+      );
+    }
+
+    if (!isWithinFileSizeLimit(dto.type, file.size)) {
+      await cleanupUploadedFile(file);
+      const maxSizeBytes = getMaxFileSizeBytes(dto.type) ?? 0;
+      const maxSizeMb = maxSizeBytes / (1024 * 1024);
+      throw new BadRequestException(
+        `File too large for type ${dto.type}. Maximum allowed size: ${maxSizeMb} MB.`,
       );
     }
 

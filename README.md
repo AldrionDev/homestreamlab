@@ -305,6 +305,14 @@ The `type` field must be sent before `file` in the form. Multer resolves the
 storage folder while it is still parsing the multipart stream, so it only
 sees fields that arrived earlier in the request.
 
+Maximum upload size per type:
+
+- `VIDEO` — 500 MB
+- `DOCUMENT` — 50 MB
+- `PHOTO` — 20 MB
+
+Uploads exceeding the limit for the selected type are rejected with `400 Bad Request`.
+
 ## Repository Structure
 
 ```txt

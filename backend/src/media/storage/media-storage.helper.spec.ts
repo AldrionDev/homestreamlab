@@ -2,7 +2,9 @@ import { MediaType } from '@prisma/client';
 import {
   generateUniqueFilename,
   getAllowedExtensions,
+  getMaxFileSizeBytes,
   isAllowedFileExtension,
+  isWithinFileSizeLimit,
   resolveMediaTypeFolder,
 } from './media-storage.helper';
 
@@ -95,5 +97,41 @@ describe('getAllowedExtensions', () => {
 
   it('returns an empty array for an unsupported type', () => {
     expect(getAllowedExtensions('AUDIO' as MediaType)).toEqual([]);
+  });
+});
+
+describe('getMaxFileSizeBytes', () => {
+  it.each([
+    [MediaType.VIDEO, 500 * 1024 * 1024],
+    [MediaType.DOCUMENT, 50 * 1024 * 1024],
+    [MediaType.PHOTO, 20 * 1024 * 1024],
+  ])('returns the max size in bytes for %s', (type, expectedBytes) => {
+    expect(getMaxFileSizeBytes(type)).toBe(expectedBytes);
+  });
+
+  it('returns undefined for an unsupported type', () => {
+    expect(getMaxFileSizeBytes('AUDIO' as MediaType)).toBeUndefined();
+  });
+});
+
+describe('isWithinFileSizeLimit', () => {
+  it.each([
+    [MediaType.VIDEO, 500 * 1024 * 1024],
+    [MediaType.DOCUMENT, 50 * 1024 * 1024],
+    [MediaType.PHOTO, 20 * 1024 * 1024],
+  ])('allows a file exactly at the %s limit', (type, maxBytes) => {
+    expect(isWithinFileSizeLimit(type, maxBytes)).toBe(true);
+  });
+
+  it.each([
+    [MediaType.VIDEO, 500 * 1024 * 1024],
+    [MediaType.DOCUMENT, 50 * 1024 * 1024],
+    [MediaType.PHOTO, 20 * 1024 * 1024],
+  ])('rejects a file one byte over the %s limit', (type, maxBytes) => {
+    expect(isWithinFileSizeLimit(type, maxBytes + 1)).toBe(false);
+  });
+
+  it('returns false for an unsupported type', () => {
+    expect(isWithinFileSizeLimit('AUDIO' as MediaType, 1)).toBe(false);
   });
 });

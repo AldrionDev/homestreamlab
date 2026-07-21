@@ -42,3 +42,21 @@ export function isAllowedFileExtension(
   const extension = extname(originalName).toLowerCase();
   return allowedExtensions.includes(extension);
 }
+
+const MAX_FILE_SIZE_BYTES: Record<MediaType, number> = {
+  VIDEO: 500 * 1024 * 1024,
+  DOCUMENT: 50 * 1024 * 1024,
+  PHOTO: 20 * 1024 * 1024,
+};
+
+export function getMaxFileSizeBytes(type: MediaType): number | undefined {
+  return MAX_FILE_SIZE_BYTES[type];
+}
+
+export function isWithinFileSizeLimit(type: MediaType, size: number): boolean {
+  const maxSize = getMaxFileSizeBytes(type);
+  if (maxSize === undefined) {
+    return false;
+  }
+  return size <= maxSize;
+}
