@@ -21,12 +21,13 @@ export interface MediaItem {
 
 export const mediaKeys = {
   all: ['media'] as const,
-  lists: () => [...mediaKeys.all, 'list'] as const,
+  lists: (type?: MediaType) => [...mediaKeys.all, 'list', type ?? 'all'] as const,
   detail: (id: string) => [...mediaKeys.all, 'detail', id] as const,
 }
 
-export function getMediaItems(): Promise<MediaItem[]> {
-  return api.get<MediaItem[]>('/media')
+export function getMediaItems(type?: MediaType): Promise<MediaItem[]> {
+  const path = type ? `/media?type=${type}` : '/media'
+  return api.get<MediaItem[]>(path)
 }
 
 export function getMediaItem(id: string): Promise<MediaItem> {

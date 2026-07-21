@@ -24,6 +24,30 @@ describe('media-api', () => {
     expect(api.get).toHaveBeenCalledWith('/media')
   })
 
+  it('getMediaItems fetches only videos when filtered by type', async () => {
+    vi.mocked(api.get).mockResolvedValue([])
+
+    await getMediaItems('VIDEO')
+
+    expect(api.get).toHaveBeenCalledWith('/media?type=VIDEO')
+  })
+
+  it('getMediaItems fetches only documents when filtered by type', async () => {
+    vi.mocked(api.get).mockResolvedValue([])
+
+    await getMediaItems('DOCUMENT')
+
+    expect(api.get).toHaveBeenCalledWith('/media?type=DOCUMENT')
+  })
+
+  it('getMediaItems fetches only photos when filtered by type', async () => {
+    vi.mocked(api.get).mockResolvedValue([])
+
+    await getMediaItems('PHOTO')
+
+    expect(api.get).toHaveBeenCalledWith('/media?type=PHOTO')
+  })
+
   it('getMediaItem fetches a single media item by id', async () => {
     vi.mocked(api.get).mockResolvedValue({})
 
