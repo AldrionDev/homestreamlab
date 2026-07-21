@@ -3,6 +3,7 @@ import {
   FileText,
   Image,
   LayoutDashboard,
+  LibraryBig,
   Upload,
   Video,
 } from "lucide-react"
@@ -11,6 +12,7 @@ import { cn } from "@/lib/utils"
 
 const navItems = [
   { to: "/app", label: "Dashboard", icon: LayoutDashboard, end: true },
+  { to: "/app/media", label: "Media", icon: LibraryBig },
   { to: "/app/videos", label: "Videos", icon: Video },
   { to: "/app/documents", label: "Documents", icon: FileText },
   { to: "/app/photos", label: "Photos", icon: Image },
