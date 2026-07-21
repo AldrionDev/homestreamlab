@@ -1,3 +1,4 @@
+import { unlink } from 'fs/promises';
 import {
   BadRequestException,
   Body,
@@ -20,6 +21,10 @@ import { CreateMediaDto } from './dto/create-media.dto';
 import { GetMediaQueryDto } from './dto/get-media-query.dto';
 import { UpdateMediaDto } from './dto/update-media.dto';
 import { mediaDiskStorage } from './storage/media-storage.config';
+import {
+  getAllowedExtensions,
+  isAllowedFileExtension,
+} from './storage/media-storage.helper';
 
 @Controller('media')
 export class MediaController {
@@ -28,7 +33,7 @@ export class MediaController {
   @UseGuards(JwtAuthGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { storage: mediaDiskStorage }))
-  upload(
+  async upload(
     @CurrentUser() user: { id: string },
     @UploadedFile() file: Express.Multer.File,
     @Body() dto: CreateMediaDto,
@@ -36,6 +41,17 @@ export class MediaController {
     if (!file) {
       throw new BadRequestException('File is required');
     }
+
+    if (!isAllowedFileExtension(dto.type, file.originalname)) {
+      await unlink(file.path).catch(() => undefined);
+      const allowedExtensions = getAllowedExtensions(dto.type)
+        .map((extension) => extension.replace('.', ''))
+        .join(', ');
+      throw new BadRequestException(
+        `Invalid file extension for type ${dto.type}. Allowed extensions: ${allowedExtensions}.`,
+      );
+    }
+
     return this.mediaService.create(user.id, file, dto);
   }
 
