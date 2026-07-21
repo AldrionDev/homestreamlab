@@ -26,6 +26,7 @@ describe('MediaController', () => {
       const file = {
         originalname: 'photo.jpg',
         path: '/uploads/photos/photo.jpg',
+        size: 1024,
       } as Express.Multer.File;
 
       await controller.upload(user, file, dto);
@@ -48,10 +49,25 @@ describe('MediaController', () => {
       const file = {
         originalname: 'document.pdf',
         path: '/uploads/photos/document.pdf',
+        size: 1024,
       } as Express.Multer.File;
 
       await expect(controller.upload(user, file, dto)).rejects.toThrow(
         'Invalid file extension for type PHOTO. Allowed extensions: jpg, jpeg, png, webp.',
+      );
+      expect(unlink).toHaveBeenCalledWith(file.path);
+      expect(mediaService.create).not.toHaveBeenCalled();
+    });
+
+    it('throws BadRequestException and removes the file when it exceeds the size limit for the media type', async () => {
+      const file = {
+        originalname: 'photo.jpg',
+        path: '/uploads/photos/photo.jpg',
+        size: 20 * 1024 * 1024 + 1,
+      } as Express.Multer.File;
+
+      await expect(controller.upload(user, file, dto)).rejects.toThrow(
+        'File too large for type PHOTO. Maximum allowed size: 20 MB.',
       );
       expect(unlink).toHaveBeenCalledWith(file.path);
       expect(mediaService.create).not.toHaveBeenCalled();
