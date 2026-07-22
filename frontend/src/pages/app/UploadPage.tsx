@@ -41,6 +41,10 @@ function UploadPage() {
     },
   })
 
+  function clearFormError() {
+    if (formError) setFormError(null)
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -98,7 +102,10 @@ function UploadPage() {
               <Input
                 id="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  clearFormError()
+                  setTitle(e.target.value)
+                }}
                 disabled={uploadMutation.isPending}
               />
             </div>
@@ -110,7 +117,10 @@ function UploadPage() {
               <textarea
                 id="description"
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={(e) => {
+                  clearFormError()
+                  setDescription(e.target.value)
+                }}
                 disabled={uploadMutation.isPending}
                 className={textareaClassName}
               />
@@ -123,7 +133,10 @@ function UploadPage() {
               <Input
                 id="category"
                 value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                onChange={(e) => {
+                  clearFormError()
+                  setCategory(e.target.value)
+                }}
                 disabled={uploadMutation.isPending}
               />
             </div>
@@ -135,7 +148,10 @@ function UploadPage() {
               <select
                 id="type"
                 value={type}
-                onChange={(e) => setType(e.target.value as MediaType)}
+                onChange={(e) => {
+                  clearFormError()
+                  setType(e.target.value as MediaType)
+                }}
                 disabled={uploadMutation.isPending}
                 className={fieldClassName}
               >
@@ -155,7 +171,10 @@ function UploadPage() {
               <Input
                 id="file"
                 type="file"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => {
+                  clearFormError()
+                  setFile(e.target.files?.[0] ?? null)
+                }}
                 disabled={uploadMutation.isPending}
               />
             </div>
