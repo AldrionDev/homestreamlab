@@ -1,9 +1,10 @@
-import { Link, useParams } from "react-router"
-import { useQuery } from "@tanstack/react-query"
+import { Link, useNavigate, useParams } from "react-router"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { Loader2 } from "lucide-react"
 
 import { ApiError, buildAssetUrl } from "@/lib/api-client"
-import { getMediaItem, mediaKeys } from "@/lib/media-api"
+import { deleteMediaItem, getMediaItem, mediaKeys } from "@/lib/media-api"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -26,6 +27,8 @@ function formatFileSize(bytes: number): string {
 
 function MediaDetailPage() {
   const { id } = useParams<{ id: string }>()
+  const navigate = useNavigate()
+  const queryClient = useQueryClient()
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: mediaKeys.detail(id ?? ""),
@@ -33,9 +36,31 @@ function MediaDetailPage() {
     enabled: !!id,
   })
 
+  const deleteMutation = useMutation({
+    mutationFn: (mediaId: string) => deleteMediaItem(mediaId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.all })
+      navigate("/app/media")
+    },
+  })
+
   const isNotFound = !id || (error instanceof ApiError && error.status === 404)
   const errorMessage =
     error instanceof Error ? error.message : "Failed to load media item."
+
+  const deleteErrorMessage =
+    deleteMutation.error instanceof ApiError
+      ? deleteMutation.error.message
+      : deleteMutation.error
+        ? "Failed to delete media item. Please try again."
+        : null
+
+  function handleDelete() {
+    if (!id) return
+    if (!window.confirm("Delete this media item? This cannot be undone.")) return
+    deleteMutation.reset()
+    deleteMutation.mutate(id)
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -117,6 +142,21 @@ function MediaDetailPage() {
                 {new Date(data.createdAt).toLocaleDateString()}
               </dd>
             </dl>
+
+            <div className="flex flex-col gap-2 border-t border-neutral-800 pt-4">
+              {deleteErrorMessage && (
+                <p className="text-sm text-red-400">{deleteErrorMessage}</p>
+              )}
+              <Button
+                type="button"
+                variant="destructive"
+                disabled={deleteMutation.isPending}
+                onClick={handleDelete}
+                className="self-start"
+              >
+                {deleteMutation.isPending ? "Deleting..." : "Delete"}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
