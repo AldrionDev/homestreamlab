@@ -3,7 +3,7 @@ import type { FormEvent } from "react"
 import { useNavigate } from "react-router"
 import { useMutation, useQueryClient } from "@tanstack/react-query"
 
-import { ApiError } from "@/lib/api-client"
+import { getErrorMessage } from "@/lib/error-message"
 import { mediaKeys, uploadMediaItem, type MediaType } from "@/lib/media-api"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -70,12 +70,12 @@ function UploadPage() {
     uploadMutation.mutate(formData)
   }
 
-  const serverError =
-    uploadMutation.error instanceof ApiError
-      ? uploadMutation.error.message
-      : uploadMutation.error
-        ? "Something went wrong. Please try again."
-        : null
+  const serverError = uploadMutation.error
+    ? getErrorMessage(
+        uploadMutation.error,
+        "Something went wrong. Please try again."
+      )
+    : null
   const displayError = formError ?? serverError
 
   return (
