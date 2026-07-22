@@ -1,12 +1,14 @@
 import { MediaType, PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
-async function main() {
-  const demoEmail = 'demo@homestreamlab.com';
+const DEMO_USER_EMAIL = 'demo@homestreamlab.com';
+const DEMO_USER_PASSWORD = 'Password123!';
 
+async function main() {
   const existingDemoUser = await prisma.user.findUnique({
-    where: { email: demoEmail },
+    where: { email: DEMO_USER_EMAIL },
   });
 
   if (existingDemoUser) {
@@ -19,11 +21,13 @@ async function main() {
     });
   }
 
+  const passwordHash = await bcrypt.hash(DEMO_USER_PASSWORD, 10);
+
   const demoUser = await prisma.user.create({
     data: {
-      email: demoEmail,
+      email: DEMO_USER_EMAIL,
       displayName: 'Demo User',
-      passwordHash: 'demo-password-hash-placeholder',
+      passwordHash,
     },
   });
 
@@ -69,6 +73,9 @@ async function main() {
   });
 
   console.log('Seed completed successfully.');
+  console.log('Local demo login (development only):');
+  console.log(`  Email:    ${DEMO_USER_EMAIL}`);
+  console.log(`  Password: ${DEMO_USER_PASSWORD}`);
 }
 
 main()
