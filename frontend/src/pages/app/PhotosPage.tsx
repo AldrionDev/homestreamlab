@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
+import { Image } from "lucide-react"
 
 import MediaGrid from "@/components/media/MediaGrid"
 import { getMediaItems, mediaKeys } from "@/lib/media-api"
 
 function PhotosPage() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: mediaKeys.lists("PHOTO"),
     queryFn: () => getMediaItems("PHOTO"),
   })
@@ -17,9 +18,12 @@ function PhotosPage() {
         items={data}
         isLoading={isLoading}
         isError={isError}
-        error={error}
         loadingLabel="Loading photos..."
-        emptyMessage="No photos yet. Upload a photo to get started."
+        emptyIcon={Image}
+        emptyTitle="No photos yet"
+        emptyDescription="Photos you upload will appear here."
+        errorTitle="Could not load photos"
+        onRetry={() => void refetch()}
       />
     </div>
   )

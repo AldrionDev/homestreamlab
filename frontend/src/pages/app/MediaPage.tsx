@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
+import { LibraryBig } from "lucide-react"
 
 import MediaGrid from "@/components/media/MediaGrid"
 import { getMediaItems, mediaKeys } from "@/lib/media-api"
 
 function MediaPage() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: mediaKeys.lists(),
     queryFn: () => getMediaItems(),
   })
@@ -17,9 +18,12 @@ function MediaPage() {
         items={data}
         isLoading={isLoading}
         isError={isError}
-        error={error}
         loadingLabel="Loading media..."
-        emptyMessage="No media yet. Upload something to get started."
+        emptyIcon={LibraryBig}
+        emptyTitle="No media yet"
+        emptyDescription="Upload your first video, document or photo to build your library."
+        errorTitle="Could not load media"
+        onRetry={() => void refetch()}
       />
     </div>
   )

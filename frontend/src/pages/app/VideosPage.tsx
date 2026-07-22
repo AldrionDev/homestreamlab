@@ -1,10 +1,11 @@
 import { useQuery } from "@tanstack/react-query"
+import { Video } from "lucide-react"
 
 import MediaGrid from "@/components/media/MediaGrid"
 import { getMediaItems, mediaKeys } from "@/lib/media-api"
 
 function VideosPage() {
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: mediaKeys.lists("VIDEO"),
     queryFn: () => getMediaItems("VIDEO"),
   })
@@ -17,9 +18,12 @@ function VideosPage() {
         items={data}
         isLoading={isLoading}
         isError={isError}
-        error={error}
         loadingLabel="Loading videos..."
-        emptyMessage="No videos yet. Upload a video to get started."
+        emptyIcon={Video}
+        emptyTitle="No videos yet"
+        emptyDescription="Videos you upload will appear here."
+        errorTitle="Could not load videos"
+        onRetry={() => void refetch()}
       />
     </div>
   )

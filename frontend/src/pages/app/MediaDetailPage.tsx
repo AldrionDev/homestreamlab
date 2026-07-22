@@ -1,9 +1,13 @@
 import { Link, useNavigate, useParams } from "react-router"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { Loader2 } from "lucide-react"
 
 import { ApiError, buildAssetUrl } from "@/lib/api-client"
+import { getErrorMessage } from "@/lib/error-message"
 import { deleteMediaItem, getMediaItem, mediaKeys } from "@/lib/media-api"
+import {
+  MediaErrorState,
+  MediaLoadingState,
+} from "@/components/media/MediaStates"
 import { Button } from "@/components/ui/button"
 import {
   Card,
@@ -30,7 +34,7 @@ function MediaDetailPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
 
-  const { data, isLoading, isError, error } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: mediaKeys.detail(id ?? ""),
     queryFn: () => getMediaItem(id!),
     enabled: !!id,
@@ -45,15 +49,13 @@ function MediaDetailPage() {
   })
 
   const isNotFound = !id || (error instanceof ApiError && error.status === 404)
-  const errorMessage =
-    error instanceof Error ? error.message : "Failed to load media item."
 
-  const deleteErrorMessage =
-    deleteMutation.error instanceof ApiError
-      ? deleteMutation.error.message
-      : deleteMutation.error
-        ? "Failed to delete media item. Please try again."
-        : null
+  const deleteErrorMessage = deleteMutation.error
+    ? getErrorMessage(
+        deleteMutation.error,
+        "Failed to delete media item. Please try again."
+      )
+    : null
 
   function handleDelete() {
     if (!id) return
@@ -71,17 +73,25 @@ function MediaDetailPage() {
         &larr; Back to media
       </Link>
 
-      {isNotFound && <p className="text-neutral-400">Media not found.</p>}
+      {isNotFound && (
+        <MediaErrorState
+          title="Media not found"
+          description="This media item does not exist or is no longer in your library."
+          actionLabel="Back to media"
+          actionTo="/app/media"
+        />
+      )}
 
       {!isNotFound && isLoading && (
-        <div className="flex items-center gap-2 text-neutral-400">
-          <Loader2 className="size-4 animate-spin" />
-          <span>Loading media...</span>
-        </div>
+        <MediaLoadingState label="Loading media..." />
       )}
 
       {!isNotFound && isError && (
-        <p className="text-neutral-400">{errorMessage}</p>
+        <MediaErrorState
+          title="Could not load media item"
+          description="Something went wrong while loading this media item. Please try again."
+          onRetry={() => void refetch()}
+        />
       )}
 
       {!isNotFound && !isLoading && !isError && data && (
