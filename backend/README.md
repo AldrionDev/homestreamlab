@@ -57,6 +57,8 @@ $ npm run test:e2e
 $ npm run test:cov
 ```
 
+`npm run test:e2e` requires a running PostgreSQL database reachable via `DATABASE_URL`, with migrations applied (`npx prisma migrate deploy`), and a `JWT_SECRET` environment variable set. In CI, the backend job runs these e2e tests against a `postgres:16` service container.
+
 ## Deployment
 
 When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
