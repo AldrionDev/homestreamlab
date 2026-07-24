@@ -14,6 +14,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiTags } from '@nestjs/swagger';
 import { MediaService } from './media.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { CurrentUser } from '../common/decorators/current-user.decorator';
@@ -32,13 +33,29 @@ async function cleanupUploadedFile(file: Express.Multer.File): Promise<void> {
   await unlink(file.path).catch(() => undefined);
 }
 
+@ApiTags('media')
 @Controller('media')
 export class MediaController {
   constructor(private readonly mediaService: MediaService) {}
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Post('upload')
   @UseInterceptors(FileInterceptor('file', { storage: mediaDiskStorage }))
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: { type: 'string', format: 'binary' },
+        title: { type: 'string' },
+        description: { type: 'string' },
+        type: { type: 'string' },
+        category: { type: 'string' },
+      },
+      required: ['file', 'title', 'type'],
+    },
+  })
   async upload(
     @CurrentUser() user: { id: string },
     @UploadedFile() file: Express.Multer.File,
@@ -70,12 +87,14 @@ export class MediaController {
     return this.mediaService.create(user.id, file, dto);
   }
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get(':id')
   findOne(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     return this.mediaService.findOne(user.id, id);
   }
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Patch(':id')
   update(
@@ -86,12 +105,14 @@ export class MediaController {
     return this.mediaService.update(user.id, id, dto);
   }
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Delete(':id')
   remove(@CurrentUser() user: { id: string }, @Param('id') id: string) {
     return this.mediaService.remove(user.id, id);
   }
 
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @Get()
   findAll(
