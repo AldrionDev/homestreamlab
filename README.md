@@ -175,6 +175,16 @@ Expected response:
 }
 ```
 
+#### Local server config
+
+The backend, frontend and CORS settings are tied together through these local defaults:
+
+- Backend listens on `PORT` (default `3000`).
+- Frontend calls the backend through `VITE_API_URL` (default `http://localhost:3000`, set in `frontend/.env.example`).
+- Backend allows browser requests from the frontend through `FRONTEND_ORIGIN` (default `http://localhost:5173`), used for CORS.
+
+Both `PORT` and `FRONTEND_ORIGIN` are documented in `backend/.env.example`. Existing developers do not need to change their local `.env` file — these defaults match the current local setup.
+
 ### 4. Start the frontend
 
 The frontend will be added in a later milestone.
