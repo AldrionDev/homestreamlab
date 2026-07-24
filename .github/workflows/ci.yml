@@ -15,6 +15,23 @@ jobs:
     defaults:
       run:
         working-directory: backend
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: homestreamlab_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d homestreamlab_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/homestreamlab_test?schema=public
+      JWT_SECRET: ci-only-throwaway-jwt-secret-not-for-production
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
@@ -25,11 +42,13 @@ jobs:
       - run: npm ci
       - name: Generate Prisma Client
         run: npx prisma generate
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/homestreamlab_ci?schema=public
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
       - run: npm run lint
       - run: npm run build
       - run: npm test
+      - name: Run e2e tests
+        run: npm run test:e2e
 
   frontend:
     name: Frontend
