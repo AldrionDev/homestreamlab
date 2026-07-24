@@ -13,7 +13,8 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'node',
+    environment: 'jsdom',
+    setupFiles: ['./src/test/setup.ts'],
     env: {
       VITE_API_URL: 'http://localhost:3000',
     },
