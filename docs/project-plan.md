@@ -1,5 +1,7 @@
 # HomeStreamLab Project Plan
 
+> **Note:** This is a historical planning document from early project setup (Milestone 1). Milestone numbering and some planned details below no longer match the actual implementation. For current project status, tech stack, and setup instructions, see [`README.md`](../README.md). For the authoritative milestone/issue breakdown, see the [GitHub Milestones](https://github.com/AldrionDev/homestreamlab/milestones) page.
+
 ## Project Goal
 
 HomeStreamLab is a full-stack personal media library application.

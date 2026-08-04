@@ -1,3 +1,5 @@
+[![CI](https://github.com/AldrionDev/homestreamlab/actions/workflows/ci.yml/badge.svg)](https://github.com/AldrionDev/homestreamlab/actions/workflows/ci.yml)
+
 # HomeStreamLab
 
 HomeStreamLab is a full-stack personal media library application for uploading, browsing and viewing user-owned videos, documents and photos.
@@ -15,12 +17,22 @@ Completed:
 - Milestone 3 — Database Models
 - Milestone 4 — Authentication Backend
 - Milestone 5 — Media Backend
-
-Next:
-
 - Milestone 6 — Local File Upload Backend
 - Milestone 7 — Frontend Foundation
 - Milestone 8 — Frontend Authentication
+- Milestone 9 — Media Library Frontend
+
+In progress:
+
+- Milestone 10 — Quality & Interview Readiness
+
+## Local-First MVP
+
+- This project is a local-first MVP: everything runs on your own machine.
+- There is currently no deployment or hosted environment.
+- Uploaded files are stored locally in the backend's `uploads/` folder.
+- This project is designed for user-owned content only.
+- Cloud storage and deployment are future improvements, not part of the current MVP.
 
 ## Tech Stack
 
@@ -36,7 +48,7 @@ Next:
 
 ### Frontend
 
-Planned:
+Implemented:
 
 - React
 - Vite
@@ -53,12 +65,12 @@ Planned:
 
 - PostgreSQL runs with Docker Compose
 - Backend runs locally with npm scripts
-- Frontend will run locally with Vite
-- Uploaded media files will be stored locally in the MVP
+- Frontend runs locally with Vite
+- Uploaded media files are stored locally in the MVP
 
 ## MVP Features
 
-Planned MVP features:
+Implemented MVP features:
 
 - User registration
 - User login
@@ -126,7 +138,7 @@ Create a `.env` file based on `.env.example`.
 Example:
 
 ```env
-DATABASE_URL="postgresql://homestreamlab_user:homestreamlab_password@localhost:5432/homestreamlab_db?schema=public"
+DATABASE_URL="postgresql://homestreamlab_user:homestreamlab_password@localhost:5433/homestreamlab?schema=public"
 JWT_SECRET="your-development-secret"
 JWT_EXPIRES_IN="1d"
 ```
@@ -137,11 +149,13 @@ Run Prisma migration:
 npx prisma migrate dev
 ```
 
-Optional: run the seed script if available:
+Seed the database with local demo data:
 
 ```bash
-npm run prisma:seed
+npx prisma db seed
 ```
+
+This creates a demo user you can log in with (see [Demo login](#demo-login-local-development-only) below).
 
 Start the backend:
 
@@ -185,15 +199,33 @@ The backend, frontend and CORS settings are tied together through these local de
 
 Both `PORT` and `FRONTEND_ORIGIN` are documented in `backend/.env.example`. Existing developers do not need to change their local `.env` file — these defaults match the current local setup.
 
+#### Demo login (local development only)
+
+After seeding the database, you can log in with:
+
+- Email: `demo@homestreamlab.com`
+- Password: `Password123!`
+
+This account and its sample media items are local development data only. They are created by `backend/prisma/seed.ts` and are not real credentials for any deployed environment.
+
 ### 4. Start the frontend
 
-The frontend will be added in a later milestone.
-
-After the frontend is created, it will be started from the `frontend` folder:
+Go to the frontend folder:
 
 ```bash
 cd frontend
 npm install
+```
+
+Create a `.env` file based on `.env.example` (defaults already point at the local backend):
+
+```env
+VITE_API_URL=http://localhost:3000
+```
+
+Start the frontend dev server:
+
+```bash
 npm run dev
 ```
 
@@ -240,6 +272,50 @@ Run lint:
 ```bash
 npm run lint
 ```
+
+Run tests:
+
+```bash
+npm test
+```
+
+`npm test` runs the backend unit tests and does **not** require a running database.
+
+Run end-to-end tests:
+
+```bash
+npm run test:e2e
+```
+
+`npm run test:e2e` requires PostgreSQL running with migrations applied (`docker compose up -d` and `npx prisma migrate dev`/`deploy`) and a `JWT_SECRET` environment variable set.
+
+## Useful Frontend Commands
+
+From the `frontend` folder:
+
+```bash
+npm run dev
+```
+
+Run build:
+
+```bash
+npm run build
+```
+
+Run lint:
+
+```bash
+npm run lint
+```
+
+Run tests:
+
+```bash
+npm test
+```
+
+`npm test` runs the frontend component tests with Vitest and does **not** require a running database.
 
 ## Authentication Test
 
