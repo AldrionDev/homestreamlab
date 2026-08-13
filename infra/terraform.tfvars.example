@@ -1,0 +1,7 @@
+# Copy to terraform.tfvars (gitignored) and set the real, machine-local value.
+# Never commit terraform.tfvars.
+
+kubeconfig_path = "/absolute/path/to/homelab-k3s.yaml"
+
+# k3s generates a single context named "default"; override only if your copy renames it.
+# kube_context = "default"
