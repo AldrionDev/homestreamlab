@@ -63,5 +63,7 @@ export function isWithinFileSizeLimit(type: MediaType, size: number): boolean {
 
 export function buildFileUrl(filePath: string): string {
   const normalizedPath = filePath.replace(/\\/g, '/');
-  return `/uploads/${normalizedPath}`;
+  const withoutLeadingSlash = normalizedPath.replace(/^\/+/, '');
+  const withoutUploadsPrefix = withoutLeadingSlash.replace(/^uploads\/+/, '');
+  return `/uploads/${withoutUploadsPrefix}`;
 }

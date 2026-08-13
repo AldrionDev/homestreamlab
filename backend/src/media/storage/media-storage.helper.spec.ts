@@ -149,4 +149,28 @@ describe('buildFileUrl', () => {
       '/uploads/photos/example.jpg',
     );
   });
+
+  it('normalizes a leading slash without duplicating the prefix', () => {
+    expect(buildFileUrl('/photos/example.jpg')).toBe(
+      '/uploads/photos/example.jpg',
+    );
+  });
+
+  it('does not double-prefix a path already starting with /uploads', () => {
+    expect(buildFileUrl('/uploads/photos/example.jpg')).toBe(
+      '/uploads/photos/example.jpg',
+    );
+  });
+
+  it('does not double-prefix a path already starting with uploads/ (no leading slash)', () => {
+    expect(buildFileUrl('uploads/photos/example.jpg')).toBe(
+      '/uploads/photos/example.jpg',
+    );
+  });
+
+  it('does not strip unrelated segments that merely start with "uploads"', () => {
+    expect(buildFileUrl('my-uploads/photos/example.jpg')).toBe(
+      '/uploads/my-uploads/photos/example.jpg',
+    );
+  });
 });
