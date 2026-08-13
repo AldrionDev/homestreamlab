@@ -317,6 +317,15 @@ npm test
 
 `npm test` runs the frontend component tests with Vitest and does **not** require a running database.
 
+Build and run the production Docker image:
+
+```bash
+docker build -f frontend/Dockerfile -t homestreamlab-frontend --build-arg VITE_API_URL=http://localhost:3000 frontend
+docker run --rm -p 8080:8080 homestreamlab-frontend
+```
+
+`VITE_API_URL` is baked into the static build at image build time (same convention as `frontend/.env`), so pass the correct backend URL via `--build-arg` for your target environment. The app is then served at `http://localhost:8080`.
+
 ## Authentication Test
 
 Register:
