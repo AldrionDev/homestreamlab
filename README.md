@@ -430,6 +430,7 @@ and the database record is kept.
 homestreamlab/
   backend/
   frontend/
+  infra/
   docs/
   docker-compose.yml
   README.md
@@ -441,7 +442,6 @@ homestreamlab/
 Not part of the first MVP:
 
 - AWS S3 storage
-- Terraform infrastructure
 - Dockerized full application
 - EKS deployment
 - RDS PostgreSQL
