@@ -5,3 +5,11 @@ kubeconfig_path = "/home/gtoth/.kube/homelab-k3s.yaml"
 
 # k3s generates a single context named "default"; override only if your copy renames it.
 # kube_context = "default"
+
+# jwt_secret and database_url: this workspace uses Local execution mode, so
+# HCP Terraform never evaluates workspace variables for it (see
+# infra/README.md "Secrets"). Supply real values here (never commit them),
+# or export TF_VAR_jwt_secret / TF_VAR_database_url for a single session.
+
+# jwt_secret   = "replace-with-a-strong-local-dev-secret"
+# database_url = "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
