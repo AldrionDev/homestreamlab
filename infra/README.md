@@ -7,9 +7,10 @@ App-owned Terraform for HomeStreamLab, applied from this repository into the
 ## Scope
 
 This workspace reads the existing `homestreamlab` Namespace but does not
-create, modify, or manage it, and manages the backend's app secrets
-(`homestreamlab-app-secrets`, see "Secrets" below). It does not yet manage
-any other application resources (Deployment/Service/IngressRoute/PVC) —
+create, modify, or manage it, manages the backend's app secrets
+(`homestreamlab-app-secrets`, see "Secrets" below), and manages app-owned
+persistent storage for Postgres data and uploads (see "Persistent storage"
+below). It does not yet manage Deployment/Service/IngressRoute resources —
 those belong to later issues.
 
 ## Ownership boundary
@@ -85,6 +86,37 @@ sourced.
 - Avoid `kubectl get secret ... -o yaml` / `-o json` / `-o
   jsonpath='{.data}'` — those print base64-encoded (trivially decodable)
   values.
+
+## Persistent storage
+
+`kubernetes_persistent_volume_claim_v1.postgres_data` and `.uploads` create
+`homestreamlab-postgres-data` (20Gi) and `homestreamlab-uploads` (10Gi) in
+the `homestreamlab` namespace, using k3s's built-in `local-path`
+StorageClass (`ReadWriteOnce`). Both are app-owned by this repo's
+Terraform, distinct from the platform-owned Namespace/ResourceQuota — see
+"Ownership boundary" above.
+
+**Single-node/local-lab only.** `local-path` provisions storage on
+whichever node the consuming Pod is scheduled to and has no replication —
+it is not suitable beyond a single-node k3s cluster. No backup wiring,
+multi-node replication, or cloud storage is in scope here.
+
+**`storage_class_name` and sizes are hardcoded, not variables** — this is a
+single-cluster, single-purpose workspace; `local-path` is the only
+StorageClass this cluster offers.
+
+**`WaitForFirstConsumer` binding mode.** The `local-path` StorageClass
+binds a PVC only once a Pod mounts it (`kubectl describe storageclass
+local-path` shows `VolumeBindingMode: WaitForFirstConsumer`). Until the
+Postgres/backend Deployments exist (later issues), these PVCs will show
+`Pending` after `terraform apply` — that is expected, not a failure. Both
+resources set `wait_until_bound = false` so `terraform apply` does not hang
+waiting for a `Bound` status that can't happen yet.
+
+**No volume expansion.** `local-path` reports `AllowVolumeExpansion:
+false`. Growing `homestreamlab-postgres-data`/`homestreamlab-uploads` later
+requires provisioning a new, larger PVC and migrating data — not an
+in-place `terraform apply` resize.
 
 ## Local validation (no backend, no cluster)
 
