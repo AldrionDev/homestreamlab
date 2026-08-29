@@ -6,10 +6,21 @@ kubeconfig_path = "/home/gtoth/.kube/homelab-k3s.yaml"
 # k3s generates a single context named "default"; override only if your copy renames it.
 # kube_context = "default"
 
-# jwt_secret and database_url: this workspace uses Local execution mode, so
-# HCP Terraform never evaluates workspace variables for it (see
+# jwt_secret and the postgres_* values: this workspace uses Local execution
+# mode, so HCP Terraform never evaluates workspace variables for it (see
 # infra/README.md "Secrets"). Supply real values here (never commit them),
-# or export TF_VAR_jwt_secret / TF_VAR_database_url for a single session.
+# or export the matching TF_VAR_* for a single session.
+#
+# postgres_user / postgres_db must be valid unquoted Postgres identifiers and
+# postgres_password must be URL-safe ([A-Za-z0-9_-]) — a deliberate MVP
+# simplification so the derived DATABASE_URL needs no escaping.
 
-# jwt_secret   = "replace-with-a-strong-local-dev-secret"
-# database_url = "postgresql://USER:PASSWORD@HOST:PORT/DATABASE?schema=public"
+# jwt_secret        = "replace-with-a-strong-local-dev-secret"
+# postgres_db       = "homestreamlab"
+# postgres_user     = "homestreamlab_app"
+# postgres_password = "replace-with-a-strong-url-safe-password"
+
+# Full image references from the local registry, with an explicit non-latest
+# tag (the future Jenkins pipeline passes a git-SHA tag).
+# backend_image  = "192.168.1.100:5000/homestreamlab-backend:0000000"
+# frontend_image = "192.168.1.100:5000/homestreamlab-frontend:0000000"

@@ -7,9 +7,11 @@ data "kubernetes_namespace_v1" "homestreamlab" {
   }
 }
 
-# App secrets for the backend, sourced from HCP Terraform sensitive
-# variables. See README.md "Secrets" for how jwt_secret/database_url are
-# supplied.
+# Single source of truth for app + Postgres runtime configuration. Postgres
+# reads POSTGRES_DB/USER/PASSWORD; the backend reads DATABASE_URL (derived
+# from the same three values in locals.tf) and JWT_SECRET. See README.md
+# "Secrets" for how the sensitive inputs are supplied under Local execution
+# mode (gitignored terraform.tfvars or TF_VAR_*).
 resource "kubernetes_secret_v1" "app" {
   metadata {
     name      = "homestreamlab-app-secrets"
@@ -17,8 +19,11 @@ resource "kubernetes_secret_v1" "app" {
   }
 
   data = {
-    JWT_SECRET   = var.jwt_secret
-    DATABASE_URL = var.database_url
+    JWT_SECRET        = var.jwt_secret
+    POSTGRES_DB       = var.postgres_db
+    POSTGRES_USER     = var.postgres_user
+    POSTGRES_PASSWORD = var.postgres_password
+    DATABASE_URL      = local.database_url
   }
 }
 

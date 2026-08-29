@@ -7,11 +7,14 @@ App-owned Terraform for HomeStreamLab, applied from this repository into the
 ## Scope
 
 This workspace reads the existing `homestreamlab` Namespace but does not
-create, modify, or manage it, manages the backend's app secrets
-(`homestreamlab-app-secrets`, see "Secrets" below), and manages app-owned
-persistent storage for Postgres data and uploads (see "Persistent storage"
-below). It does not yet manage Deployment/Service/IngressRoute resources —
-those belong to later issues.
+create, modify, or manage it. It manages the app Secret
+(`homestreamlab-app-secrets`, see "Secrets" below), app-owned persistent
+storage for Postgres data and uploads (see "Persistent storage" below), and
+the app runtime workloads — Postgres, backend, and frontend Deployments plus
+their internal ClusterIP Services (see "Workloads" below).
+
+It does not manage IngressRoute / TLS / DNS, Jenkins, RBAC, or any
+`homelab-platform` resource — those belong to other issues / repositories.
 
 ## Ownership boundary
 
@@ -47,26 +50,43 @@ no resource changes, and no attempt to touch the Namespace/ResourceQuota.
 ## Secrets
 
 `kubernetes_secret_v1.app` creates `homestreamlab-app-secrets` in the
-existing `homestreamlab` namespace, with two keys consumed by the backend:
-`JWT_SECRET` and `DATABASE_URL`.
+existing `homestreamlab` namespace with five keys:
 
-Values come from the Terraform input variables `jwt_secret` and
-`database_url` (both `sensitive = true`, no default).
+| Key | Source | Consumed by |
+| --- | --- | --- |
+| `JWT_SECRET` | `var.jwt_secret` (`sensitive`) | backend |
+| `POSTGRES_DB` | `var.postgres_db` | Postgres container (honoured on first data-dir init only) |
+| `POSTGRES_USER` | `var.postgres_user` | Postgres container (first init only) |
+| `POSTGRES_PASSWORD` | `var.postgres_password` (`sensitive`) | Postgres container (first init only) |
+| `DATABASE_URL` | derived in `locals.tf` from `postgres_user` / `postgres_password` / `postgres_db` + the `homestreamlab-postgres` Service name | backend + the migration init container |
+
+The three `postgres_*` inputs are the single source of truth — they drive
+both the Postgres container environment and the backend's `DATABASE_URL`.
+They are validated to safe character sets (`postgres_user` / `postgres_db` =
+unquoted Postgres identifiers, `postgres_password` = `[A-Za-z0-9_-]`) so the
+derived URL needs no escaping. This is a deliberate MVP simplification, not a
+Terraform limitation: `urlencode()` exists — wrap the interpolation in
+`locals.tf` with it if arbitrary credentials ever become a requirement.
+
+`jwt_secret` and `postgres_password` are `sensitive = true` with no default.
 
 **HCP Terraform workspace variables do not work for this workspace.**
 HCP Terraform's own docs are explicit: "HCP Terraform does not evaluate
 workspace variables or variable sets in local execution mode" — the
 Variables page isn't even available in the UI for a Local execution mode
 workspace. Since `homestreamlab-k8s` is pinned to Local execution (see
-"Backend" above), these two variables must be supplied on the operator's own
-machine instead:
+"Backend" above), these inputs must be supplied on the operator's own
+machine instead. The same applies to `backend_image` / `frontend_image`
+(not secret, but still workspace inputs).
 
 - **Primary**: add real values to a gitignored `terraform.tfvars`, the same
   file already used for `kubeconfig_path` — copy from
-  `terraform.tfvars.example` and fill in both.
-- **Fallback**: a temporary `TF_VAR_jwt_secret` / `TF_VAR_database_url`
-  export for a single session only — never added to `.bashrc`/`.zshrc` or
-  any persisted shell config.
+  `terraform.tfvars.example` and fill them in.
+- **Fallback**: temporary `TF_VAR_jwt_secret` / `TF_VAR_postgres_db` /
+  `TF_VAR_postgres_user` / `TF_VAR_postgres_password` /
+  `TF_VAR_backend_image` / `TF_VAR_frontend_image` exports for a single
+  session only — never added to `.bashrc`/`.zshrc` or any persisted shell
+  config.
 - Never commit real values to `terraform.tfvars` or any `.tfvars` file.
 
 **State still contains the values.** Terraform stores all resource
@@ -117,6 +137,63 @@ waiting for a `Bound` status that can't happen yet.
 false`. Growing `homestreamlab-postgres-data`/`homestreamlab-uploads` later
 requires provisioning a new, larger PVC and migrating data — not an
 in-place `terraform apply` resize.
+
+## Workloads
+
+`postgres.tf`, `backend.tf`, and `frontend.tf` define the app runtime.
+
+| Deployment / Service | Image | Service (ClusterIP) | Storage | Strategy |
+| --- | --- | --- | --- | --- |
+| `homestreamlab-postgres` | `postgres:16` (hardcoded) | `5432` | `homestreamlab-postgres-data` at `/var/lib/postgresql/data` (`PGDATA` subdir) | `Recreate` |
+| `homestreamlab-backend` | `var.backend_image` | `3000` | `homestreamlab-uploads` at `/app/uploads` | `Recreate` |
+| `homestreamlab-frontend` | `var.frontend_image` | `8080` | none | default (RollingUpdate) |
+
+All are single-replica, scoped to single-node local-lab use. `Recreate` is
+required for Postgres and backend because their PVCs are `ReadWriteOnce` on a
+single node; the frontend is stateless and stays on the default strategy (its
+one-Pod rollout surge fits the namespace ResourceQuota). The frontend Service
+is the intended target for the future #133 Traefik IngressRoute.
+
+**Images.** `backend_image` / `frontend_image` are full
+`[registry[:port]/]repository:tag` references with an explicit tag other than
+`latest` — enforced by variable validation, which allows a `:port` on the
+registry. The future Jenkins pipeline passes git-SHA tags. Supply them the
+same way as the secrets. `postgres:16` is hardcoded, like the PVC sizes —
+this is a single-cluster, single-purpose workspace.
+
+**Migrations.** `prisma` is a runtime dependency of the backend
+(`backend/package.json`), so `prisma migrate deploy` is present in the pruned
+production image. The backend Deployment runs it in an init container
+(`node_modules/.bin/prisma migrate deploy --schema=prisma/schema.prisma`,
+`DATABASE_URL` from the Secret). The init container runs to completion before
+the app container starts; if Postgres is not reachable yet on the first
+apply it exits non-zero and the kubelet retries it with backoff — the Pod
+shows `Init:Error` / `Init:CrashLoopBackOff` until Postgres is `Ready`, then
+migrations apply and the app container starts. This is the ordering gate; the
+backend's `startup_probe` only covers Nest bootstrap afterwards.
+`prisma.config.ts` is intentionally absent from the runtime image (it imports
+a dev-only `dotenv`) — `--schema` plus the `DATABASE_URL` env var are enough
+for the CLI.
+
+**Probes.** Postgres: `pg_isready -h 127.0.0.1 -p 5432` (an `exec` probe;
+args are not `$(VAR)`-expanded, so no `-U`/`-d`). Backend: `GET /health` for
+startup / readiness / liveness. Frontend: `GET /` for readiness / liveness.
+
+**Resources.** Every container and init container sets both `requests` and
+`limits` (required once the namespace ResourceQuota constrains totals).
+Effective per-Pod requests follow Kubernetes init-container semantics
+(`max(max(initContainers), sum(containers))`), so the migrate init container
+(50m / 128Mi) never adds to the backend Pod (100m / 256Mi). Namespace
+totals are roughly 225m CPU / 544Mi requests and 1100m CPU / 1408Mi limits —
+re-check against `kubectl describe resourcequota -n homestreamlab` and tune.
+
+**First apply.** The two PVCs move from `Pending` to `Bound` as their
+consuming Pods are scheduled (`local-path` is `WaitForFirstConsumer`).
+
+**Frontend API URL.** `VITE_API_URL` is baked into the frontend image at
+build time. With no ingress yet (#133), browser-to-backend calls are not
+exercised by this workspace; wiring a real API URL / same-origin proxy is
+#133's concern.
 
 ## Local validation (no backend, no cluster)
 
