@@ -35,19 +35,89 @@ variable "jwt_secret" {
   }
 }
 
-variable "database_url" {
+variable "postgres_db" {
   description = <<-EOT
-    Postgres connection string for the backend, stored as the DATABASE_URL
-    key of the homestreamlab-app-secrets Kubernetes Secret. This workspace
-    uses Local execution mode, so HCP Terraform never evaluates workspace
-    variables for it — supply this from a gitignored terraform.tfvars (or
-    TF_VAR_database_url for a single session). Never commit a real value.
+    Postgres database name. Stored as the POSTGRES_DB key of
+    homestreamlab-app-secrets and interpolated into the derived DATABASE_URL
+    (see locals.tf). Supply from a gitignored terraform.tfvars (or
+    TF_VAR_postgres_db) — this workspace uses Local execution mode.
+  EOT
+  type        = string
+
+  validation {
+    condition     = can(regex("^[A-Za-z_][A-Za-z0-9_]*$", var.postgres_db))
+    error_message = "postgres_db must be a valid unquoted Postgres identifier (letters, digits, underscore; not starting with a digit). This is a deliberate MVP simplification so DATABASE_URL needs no escaping."
+  }
+}
+
+variable "postgres_user" {
+  description = <<-EOT
+    Postgres role name. Stored as the POSTGRES_USER key of
+    homestreamlab-app-secrets and interpolated into the derived DATABASE_URL
+    (see locals.tf). Supply from a gitignored terraform.tfvars (or
+    TF_VAR_postgres_user) — this workspace uses Local execution mode.
+  EOT
+  type        = string
+
+  validation {
+    condition     = can(regex("^[A-Za-z_][A-Za-z0-9_]*$", var.postgres_user))
+    error_message = "postgres_user must be a valid unquoted Postgres identifier (letters, digits, underscore; not starting with a digit). This is a deliberate MVP simplification so DATABASE_URL needs no escaping."
+  }
+}
+
+variable "postgres_password" {
+  description = <<-EOT
+    Postgres password. Stored as the POSTGRES_PASSWORD key of
+    homestreamlab-app-secrets and interpolated into the derived DATABASE_URL
+    (see locals.tf). This workspace uses Local execution mode, so HCP
+    Terraform never evaluates workspace variables for it — supply this from a
+    gitignored terraform.tfvars (or TF_VAR_postgres_password for a single
+    session). Never commit a real value.
+
+    Constrained to URL-safe characters so the derived DATABASE_URL needs no
+    escaping — a deliberate MVP simplification. If arbitrary passwords ever
+    become a requirement, wrap the interpolation in urlencode() (locals.tf).
   EOT
   type        = string
   sensitive   = true
 
   validation {
-    condition     = length(var.database_url) > 0
-    error_message = "database_url must not be empty."
+    condition     = can(regex("^[A-Za-z0-9_-]+$", var.postgres_password))
+    error_message = "postgres_password must be non-empty and contain only letters, digits, underscore, or hyphen."
+  }
+}
+
+variable "backend_image" {
+  description = <<-EOT
+    Full backend image reference: [registry[:port]/]repository:tag, with an
+    explicit tag that is not "latest"
+    (e.g. 192.168.1.100:5000/homestreamlab-backend:<git-sha>). Supply from a
+    gitignored terraform.tfvars (or TF_VAR_backend_image) — the future
+    Jenkins pipeline passes a git-SHA tag here.
+  EOT
+  type        = string
+
+  validation {
+    # Requires ".../<repo>:<tag>". The registry segment may carry a ":port"
+    # because the check only inspects the part after the last "/". Rejects a
+    # missing tag and an explicit ":latest".
+    condition     = can(regex("^[^/]+/.+:[^/:]+$", var.backend_image)) && !endswith(var.backend_image, ":latest")
+    error_message = "backend_image must be [registry[:port]/]repository:tag with an explicit tag other than \"latest\"."
+  }
+}
+
+variable "frontend_image" {
+  description = <<-EOT
+    Full frontend image reference: [registry[:port]/]repository:tag, with an
+    explicit tag that is not "latest"
+    (e.g. 192.168.1.100:5000/homestreamlab-frontend:<git-sha>). Supply from a
+    gitignored terraform.tfvars (or TF_VAR_frontend_image) — the future
+    Jenkins pipeline passes a git-SHA tag here.
+  EOT
+  type        = string
+
+  validation {
+    condition     = can(regex("^[^/]+/.+:[^/:]+$", var.frontend_image)) && !endswith(var.frontend_image, ":latest")
+    error_message = "frontend_image must be [registry[:port]/]repository:tag with an explicit tag other than \"latest\"."
   }
 }
