@@ -326,6 +326,10 @@ docker run --rm -p 8080:8080 homestreamlab-frontend
 
 `VITE_API_URL` is baked into the static build at image build time (same convention as `frontend/.env`), so pass the correct backend URL via `--build-arg` for your target environment. The app is then served at `http://localhost:8080`.
 
+### Homelab deployment
+
+The Kubernetes deployment (`infra/`) exposes the app through a Traefik `IngressRoute` at `http://homestreamlab.homelab.home.arpa` (plain HTTP, LAN only). The frontend and API share that one hostname (Traefik routes `/auth`, `/media` and `/uploads` to the backend Service, everything else to the frontend), so the frontend image for that environment must be built with `--build-arg VITE_API_URL=http://homestreamlab.homelab.home.arpa`. See `infra/README.md` ("Ingress") for the routing details.
+
 ## Authentication Test
 
 Register:

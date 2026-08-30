@@ -121,3 +121,34 @@ variable "frontend_image" {
     error_message = "frontend_image must be [registry[:port]/]repository:tag with an explicit tag other than \"latest\"."
   }
 }
+
+variable "ingress_host" {
+  description = <<-EOT
+    Public hostname the Traefik IngressRoute answers on. Resolved by
+    homelab-platform's dnsmasq wildcard *.homelab.home.arpa; plain HTTP only,
+    no TLS. Has a working default — override only if the platform hostname
+    changes. This workspace uses Local execution mode, so an override goes in
+    the gitignored terraform.tfvars (or TF_VAR_ingress_host).
+
+    The frontend image must be built with VITE_API_URL = http://<this host>
+    so the browser calls the API same-origin through this route — see
+    README.md "Ingress".
+  EOT
+  type        = string
+  default     = "homestreamlab.homelab.home.arpa"
+
+  validation {
+    condition     = can(regex("^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$", var.ingress_host))
+    error_message = "ingress_host must be a lowercase DNS hostname (dot-separated labels of letters, digits, and hyphens; at least two labels)."
+  }
+}
+
+variable "traefik_entrypoint" {
+  description = <<-EOT
+    Name of the platform Traefik HTTP entrypoint the IngressRoute binds to.
+    Confirmed as "web" against the live k3s Traefik (v3.7). Override only if
+    the platform renames it.
+  EOT
+  type        = string
+  default     = "web"
+}
