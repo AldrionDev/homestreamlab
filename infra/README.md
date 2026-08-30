@@ -11,10 +11,12 @@ create, modify, or manage it. It manages the app Secret
 (`homestreamlab-app-secrets`, see "Secrets" below), app-owned persistent
 storage for Postgres data and uploads (see "Persistent storage" below), and
 the app runtime workloads — Postgres, backend, and frontend Deployments plus
-their internal ClusterIP Services (see "Workloads" below).
+their internal ClusterIP Services (see "Workloads" below), and the Traefik
+`IngressRoute` that exposes the app on the homelab LAN (see "Ingress" below).
 
-It does not manage IngressRoute / TLS / DNS, Jenkins, RBAC, or any
-`homelab-platform` resource — those belong to other issues / repositories.
+It does not manage TLS, DNS, the Traefik installation or its CRDs/entrypoints,
+Jenkins, RBAC, or any `homelab-platform` resource — those belong to other
+issues / repositories.
 
 ## Ownership boundary
 
@@ -152,7 +154,7 @@ All are single-replica, scoped to single-node local-lab use. `Recreate` is
 required for Postgres and backend because their PVCs are `ReadWriteOnce` on a
 single node; the frontend is stateless and stays on the default strategy (its
 one-Pod rollout surge fits the namespace ResourceQuota). The frontend Service
-is the intended target for the future #133 Traefik IngressRoute.
+is the fallback target of the Traefik IngressRoute (see "Ingress").
 
 **Images.** `backend_image` / `frontend_image` are full
 `[registry[:port]/]repository:tag` references with an explicit tag other than
@@ -191,9 +193,48 @@ re-check against `kubectl describe resourcequota -n homestreamlab` and tune.
 consuming Pods are scheduled (`local-path` is `WaitForFirstConsumer`).
 
 **Frontend API URL.** `VITE_API_URL` is baked into the frontend image at
-build time. With no ingress yet (#133), browser-to-backend calls are not
-exercised by this workspace; wiring a real API URL / same-origin proxy is
-#133's concern.
+build time (there is no runtime config lookup). For the LAN deployment the
+image must be built with
+`--build-arg VITE_API_URL=http://homestreamlab.homelab.home.arpa` so the
+browser calls the API on the same origin it loaded the SPA from (see
+"Ingress"). Then set `frontend_image` to that build's tag.
+
+## Ingress
+
+`ingress.tf` defines one Traefik `IngressRoute` (`kubernetes_manifest`,
+`traefik.io/v1alpha1`) named `homestreamlab` in the `homestreamlab`
+namespace. It binds to the platform Traefik HTTP entrypoint (`web`, plain
+HTTP :80 — no TLS) and answers on `var.ingress_host`
+(`homestreamlab.homelab.home.arpa` by default), which resolves via
+`homelab-platform`'s dnsmasq wildcard `*.homelab.home.arpa`.
+
+**Same-origin model.** The SPA and its API share the one hostname. Two
+routes, evaluated by explicit priority:
+
+| Priority | Match | Service |
+| --- | --- | --- |
+| 20 | `Host` + `PathPrefix(/auth)` \|\| `PathPrefix(/media)` \|\| `PathPrefix(/uploads)` | `homestreamlab-backend:http` (3000) |
+| 10 | `Host` (catch-all) | `homestreamlab-frontend:http` (8080) |
+
+The SPA's own client routes live under `/app/*` and do not collide with the
+backend prefixes. Because API and upload calls then hit the same origin as
+the SPA, no CORS is involved and the backend needs no `FRONTEND_ORIGIN`
+change. The backend's Swagger UI (`/api`) and `/health` are deliberately
+**not** exposed through the IngressRoute — they are not needed by the
+browser app and stay cluster-internal. A future top-level SPA route named
+`/auth`, `/media`, or `/uploads` would be shadowed by the backend route;
+keep new SPA routes under `/app`.
+
+**Ownership.** Traefik itself, its CRDs, and its entrypoints are owned by
+`homelab-platform`; this workspace only creates the `IngressRoute` instance.
+The CRD group/version (`traefik.io/v1alpha1`) and entrypoint name (`web`)
+were confirmed against the live cluster (Traefik v3.7 on k3s).
+
+**Plan/apply reach the cluster.** `kubernetes_manifest` fetches the CRD
+schema from the API server at plan time, so `terraform plan`/`apply` must
+run on the LAN (already required for this Local-execution workspace).
+`./validate.sh` stays offline — `terraform validate` does not contact the
+cluster.
 
 ## Local validation (no backend, no cluster)
 

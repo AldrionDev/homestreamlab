@@ -24,3 +24,10 @@ kubeconfig_path = "/home/gtoth/.kube/homelab-k3s.yaml"
 # tag (the future Jenkins pipeline passes a git-SHA tag).
 # backend_image  = "192.168.1.100:5000/homestreamlab-backend:0000000"
 # frontend_image = "192.168.1.100:5000/homestreamlab-frontend:0000000"
+
+# Ingress hostname + Traefik HTTP entrypoint. Both have working defaults
+# (homestreamlab.homelab.home.arpa / web) — uncomment only to override.
+# The frontend image must be built with
+# --build-arg VITE_API_URL=http://<ingress_host> (see infra/README.md "Ingress").
+# ingress_host       = "homestreamlab.homelab.home.arpa"
+# traefik_entrypoint = "web"
