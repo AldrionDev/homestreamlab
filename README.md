@@ -330,6 +330,8 @@ docker run --rm -p 8080:8080 homestreamlab-frontend
 
 The Kubernetes deployment (`infra/`) exposes the app through a Traefik `IngressRoute` at `http://homestreamlab.homelab.home.arpa` (plain HTTP, LAN only). The frontend and API share that one hostname (Traefik routes `/auth`, `/media` and `/uploads` to the backend Service, everything else to the frontend), so the frontend image for that environment must be built with `--build-arg VITE_API_URL=http://homestreamlab.homelab.home.arpa`. See `infra/README.md` ("Ingress") for the routing details.
 
+Deployment is delivered by a root `Jenkinsfile`, run by the shared local `local-jenkins-platform` Jenkins controller (`projects/homestreamlab`) against the local k3s homelab — GitHub Actions remains the PR quality gate and is unchanged. The pipeline builds and pushes canonical `<registry>/homestreamlab/{backend,frontend}:<git-sha>` images (never a flat `homestreamlab-backend` name, never only `latest`), runs `terraform plan`, and pauses at a human approval gate before `terraform apply`. See `infra/README.md` ("Jenkins pipeline") for the full contract.
+
 ## Authentication Test
 
 Register:
