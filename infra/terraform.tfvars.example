@@ -21,9 +21,13 @@ kubeconfig_path = "/home/gtoth/.kube/homelab-k3s.yaml"
 # postgres_password = "replace-with-a-strong-url-safe-password"
 
 # Full image references from the local registry, with an explicit non-latest
-# tag (the future Jenkins pipeline passes a git-SHA tag).
-# backend_image  = "192.168.1.100:5000/homestreamlab-backend:0000000"
-# frontend_image = "192.168.1.100:5000/homestreamlab-frontend:0000000"
+# tag, following the shared local-jenkins-platform OCI consumer contract
+# (<registry>/<project>/<component>:<git-sha> — NOT a flat homestreamlab-backend
+# style name). The Jenkinsfile injects these two via TF_VAR_backend_image /
+# TF_VAR_frontend_image at plan time; you only need real values here for a
+# manual local plan/apply.
+# backend_image  = "192.168.1.100:5000/homestreamlab/backend:0000000"
+# frontend_image = "192.168.1.100:5000/homestreamlab/frontend:0000000"
 
 # Ingress hostname + Traefik HTTP entrypoint. Both have working defaults
 # (homestreamlab.homelab.home.arpa / web) — uncomment only to override.

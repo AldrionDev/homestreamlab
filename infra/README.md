@@ -159,9 +159,13 @@ is the fallback target of the Traefik IngressRoute (see "Ingress").
 **Images.** `backend_image` / `frontend_image` are full
 `[registry[:port]/]repository:tag` references with an explicit tag other than
 `latest` — enforced by variable validation, which allows a `:port` on the
-registry. The future Jenkins pipeline passes git-SHA tags. Supply them the
-same way as the secrets. `postgres:16` is hardcoded, like the PVC sizes —
-this is a single-cluster, single-purpose workspace.
+registry. They follow the shared `local-jenkins-platform` OCI consumer
+contract: `<registry>/homestreamlab/<component>:<git-sha>` (e.g.
+`192.168.1.100:5000/homestreamlab/backend:<git-sha>`) — **not** a flat
+`homestreamlab-backend` name. The Jenkins pipeline (`Jenkinsfile`, repo root)
+passes git-SHA tags. For a manual local plan/apply, supply them the same way
+as the secrets. `postgres:16` is hardcoded, like the PVC sizes — this is a
+single-cluster, single-purpose workspace.
 
 **Migrations.** `prisma` is a runtime dependency of the backend
 (`backend/package.json`), so `prisma migrate deploy` is present in the pruned
@@ -198,6 +202,36 @@ image must be built with
 `--build-arg VITE_API_URL=http://homestreamlab.homelab.home.arpa` so the
 browser calls the API on the same origin it loaded the SPA from (see
 "Ingress"). Then set `frontend_image` to that build's tag.
+
+## Jenkins pipeline
+
+The root `Jenkinsfile` is the gated home lab delivery pipeline: it builds and
+publishes SHA-tagged `homestreamlab/backend` / `homestreamlab/frontend` images
+(see "Images"), runs `terraform plan -out=tfplan`, pauses at a human approval
+gate, then applies that exact saved plan. It never writes or modifies a tracked
+`.tf` or `.tfvars` file — every input below reaches Terraform purely through
+process environment at plan time:
+
+* `backend_image` / `frontend_image` / `kubeconfig_path` / `kube_context` are
+  set as `TF_VAR_*` from the computed image refs and from the
+  `k3s-homestreamlab` credential bound for the pipeline run;
+* `jwt_secret` and `postgres_password` come from the Jenkins Secret Text
+  credentials `homestreamlab-jwt-secret` / `homestreamlab-postgres-password`
+  (provisioned by `local-jenkins-platform`'s consumer application secret
+  contract), bound only around the `terraform plan` step via
+  `withCredentials`;
+* `postgres_db` / `postgres_user` are **consumer-owned non-secret
+  configuration** — the `local-jenkins-platform` contract explicitly forbids
+  making them a Jenkins credential, Docker secret or platform environment
+  variable, so the `Jenkinsfile` declares them directly (`environment {}`
+  block). They must stay stable across applies — see "Secrets" above.
+
+Publishing the two SHA-tagged images to the local registry happens
+**before** the approval gate. This is deliberate: it is a registry write, not
+a Terraform or Kubernetes deployment mutation, so it is outside the scope the
+gate protects (and the pipeline's write-once precheck ensures it only ever
+creates the two tags, never overwrites one). The gate blocks
+`terraform apply` only.
 
 ## Ingress
 
