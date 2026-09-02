@@ -26,10 +26,14 @@ In progress:
 
 - Milestone 10 — Quality & Interview Readiness
 
+Deployment:
+
+- Milestone 11 — Home Lab Deployment Pipeline — optional LAN-only k3s home lab delivery path (see [`docs/deployment.md`](docs/deployment.md))
+
 ## Local-First MVP
 
-- This project is a local-first MVP: everything runs on your own machine.
-- There is currently no deployment or hosted environment.
+- This project is a local-first MVP: local development is the default and everything runs on your own machine.
+- The only deployment target is an optional LAN-only home lab k3s cluster; there is no public or cloud-hosted environment. See [`docs/deployment.md`](docs/deployment.md) for the deployment path and its limits.
 - Uploaded files are stored locally in the backend's `uploads/` folder.
 - This project is designed for user-owned content only.
 - Cloud storage and deployment are future improvements, not part of the current MVP.
@@ -328,9 +332,9 @@ docker run --rm -p 8080:8080 homestreamlab-frontend
 
 ### Homelab deployment
 
-The Kubernetes deployment (`infra/`) exposes the app through a Traefik `IngressRoute` at `http://homestreamlab.homelab.home.arpa` (plain HTTP, LAN only). The frontend and API share that one hostname (Traefik routes `/auth`, `/media` and `/uploads` to the backend Service, everything else to the frontend), so the frontend image for that environment must be built with `--build-arg VITE_API_URL=http://homestreamlab.homelab.home.arpa`. See `infra/README.md` ("Ingress") for the routing details.
+The app can be deployed to an optional LAN-only home lab k3s cluster. The frontend image for that environment must be built with `--build-arg VITE_API_URL=http://homestreamlab.homelab.home.arpa`, because the SPA and API share one hostname behind a Traefik `IngressRoute` (plain HTTP, LAN only).
 
-Deployment is delivered by a root `Jenkinsfile`, run by the shared local `local-jenkins-platform` Jenkins controller (`projects/homestreamlab`) against the local k3s homelab — GitHub Actions remains the PR quality gate and is unchanged. The pipeline builds and pushes canonical `<registry>/homestreamlab/{backend,frontend}:<git-sha>` images (never a flat `homestreamlab-backend` name, never only `latest`), runs `terraform plan`, and pauses at a human approval gate before `terraform apply`. See `infra/README.md` ("Jenkins pipeline") for the full contract.
+See [`docs/deployment.md`](docs/deployment.md) for the full deployment path, the CI vs. CD split, and known limits, and [`infra/README.md`](infra/README.md) for the Terraform workspace and Jenkins pipeline contract.
 
 ## Authentication Test
 
