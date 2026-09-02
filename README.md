@@ -6,37 +6,47 @@ HomeStreamLab is a full-stack personal media library application for uploading, 
 
 The project is built for learning, portfolio and CV/demo purposes. It is not a commercial streaming platform and is designed only for user-owned content.
 
+## What This Project Demonstrates
+
+Interview-relevant skills exercised end to end in this repository:
+
+- Full-stack development with React (Vite, TypeScript) and NestJS (TypeScript, Prisma, PostgreSQL)
+- JWT authentication with protected, per-user data scoping
+- Media upload and local file storage with per-type size limits and validation
+- Backend and frontend automated tests (Jest, Vitest) plus backend end-to-end tests
+- GitHub Actions CI on every pull request, with `main` branch protection requiring the `Backend` and `Frontend` checks
+- Production Docker images for the backend and frontend
+- Infrastructure as code with Terraform (HCP Terraform Cloud holds remote state only)
+- Gated deployment pipeline with a human approval step before any cluster change (Jenkins)
+- Least-privilege Kubernetes deployment identity
+- Runtime-proven LAN delivery on k3s behind Traefik
+
 ## Status
 
-Current phase: **MVP development**
+Milestones 1–11 are complete. The local-first MVP is finished, and an optional
+LAN-only k3s home-lab deployment path is implemented and runtime-proven. There is
+no public or cloud-hosted environment.
 
-Completed:
+| Area | Milestones | State |
+| --- | --- | --- |
+| Backend foundation, database models | 1–3 | Complete |
+| Authentication backend | 4 | Complete |
+| Media backend and local file upload | 5–6 | Complete |
+| Frontend foundation, auth, media library | 7–9 | Complete |
+| Quality, testing and CI | 10 | Complete |
+| Home-lab deployment pipeline | 11 | Complete |
 
-- Milestone 1 — Project Setup & Planning
-- Milestone 2 — Backend Foundation
-- Milestone 3 — Database Models
-- Milestone 4 — Authentication Backend
-- Milestone 5 — Media Backend
-- Milestone 6 — Local File Upload Backend
-- Milestone 7 — Frontend Foundation
-- Milestone 8 — Frontend Authentication
-- Milestone 9 — Media Library Frontend
-
-In progress:
-
-- Milestone 10 — Quality & Interview Readiness
-
-Deployment:
-
-- Milestone 11 — Home Lab Deployment Pipeline — optional LAN-only k3s home lab delivery path (see [`docs/deployment.md`](docs/deployment.md))
+Milestone and issue history: [GitHub Milestones](https://github.com/AldrionDev/homestreamlab/milestones).
+The deployment path and its limits are documented in [`docs/deployment.md`](docs/deployment.md).
 
 ## Local-First MVP
 
-- This project is a local-first MVP: local development is the default and everything runs on your own machine.
-- The only deployment target is an optional LAN-only home lab k3s cluster; there is no public or cloud-hosted environment. See [`docs/deployment.md`](docs/deployment.md) for the deployment path and its limits.
+- Local development is the default: everything runs on your own machine (see [Local Setup](#local-setup)).
+- An optional, runtime-proven LAN-only home-lab k3s deployment exists. See [`docs/deployment.md`](docs/deployment.md) for the deployment path and its limits.
+- There is no public or cloud-hosted environment.
 - Uploaded files are stored locally in the backend's `uploads/` folder.
 - This project is designed for user-owned content only.
-- Cloud storage and deployment are future improvements, not part of the current MVP.
+- Local Docker images and the LAN k3s deployment already exist; managed cloud storage and public/cloud hosting remain future improvements.
 
 ## Tech Stack
 
@@ -49,10 +59,9 @@ Deployment:
 - PostgreSQL
 - JWT Authentication
 - Swagger / OpenAPI
+- Jest
 
 ### Frontend
-
-Implemented:
 
 - React
 - Vite
@@ -64,6 +73,27 @@ Implemented:
 - Embla Carousel
 - React Router
 - TanStack Query
+- Vitest
+
+### Testing & CI
+
+- Backend unit tests (Jest) and end-to-end tests; unit tests need no database
+- Frontend component tests (Vitest)
+- GitHub Actions CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `Backend` and `Frontend` jobs on every pull request
+- `main` branch protection requires a pull request and the `Backend` and `Frontend` checks
+
+### Delivery & Infrastructure
+
+Used only for the optional LAN-only home-lab deployment; not required for local development.
+
+- Production Docker images for the backend and frontend
+- Jenkins gated pipeline: build and publish images, `terraform plan`, human approval, `terraform apply`, verify
+- Terraform-managed application resources; HCP Terraform Cloud holds remote state only (Local execution mode)
+- k3s single-node cluster with Traefik ingress
+- Local container registry for SHA-tagged images
+- Least-privilege Kubernetes deployment identity
+
+Details: [`docs/deployment.md`](docs/deployment.md) and [`infra/README.md`](infra/README.md).
 
 ### Local Development
 
@@ -103,6 +133,10 @@ NestJS REST API
     |
     +--> Local uploads folder
 ```
+
+The diagram above is the local development topology. The LAN-only home-lab
+deployment topology (k3s, Traefik, persistent volumes) is described in
+[`docs/deployment.md`](docs/deployment.md).
 
 ## Local Setup
 
@@ -321,54 +355,35 @@ npm test
 
 `npm test` runs the frontend component tests with Vitest and does **not** require a running database.
 
-Build and run the production Docker image:
+Build and run the production Docker image locally:
 
 ```bash
 docker build -f frontend/Dockerfile -t homestreamlab-frontend --build-arg VITE_API_URL=http://localhost:3000 frontend
 docker run --rm -p 8080:8080 homestreamlab-frontend
 ```
 
-`VITE_API_URL` is baked into the static build at image build time (same convention as `frontend/.env`), so pass the correct backend URL via `--build-arg` for your target environment. The app is then served at `http://localhost:8080`.
+`VITE_API_URL` is baked into the static build at image build time, so pass the correct backend URL via `--build-arg` for your target environment. The app is then served at `http://localhost:8080`.
 
-### Homelab deployment
+For the optional LAN-only home-lab (k3s) image build and deployment, see [`docs/deployment.md`](docs/deployment.md) and [`infra/README.md`](infra/README.md).
 
-The app can be deployed to an optional LAN-only home lab k3s cluster. The frontend image for that environment must be built with `--build-arg VITE_API_URL=http://homestreamlab.homelab.home.arpa`, because the SPA and API share one hostname behind a Traefik `IngressRoute` (plain HTTP, LAN only).
-
-See [`docs/deployment.md`](docs/deployment.md) for the full deployment path, the CI vs. CD split, and known limits, and [`infra/README.md`](infra/README.md) for the Terraform workspace and Jenkins pipeline contract.
-
-## Authentication Test
-
-Register:
+## Quick Verify
 
 ```bash
+# Register
 curl -X POST http://localhost:3000/auth/register \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "gabor@example.com",
-    "password": "password123",
-    "displayName": "Gábor"
-  }'
-```
+  -d '{"email":"gabor@example.com","password":"password123","displayName":"Gábor"}'
 
-Login:
-
-```bash
+# Login (returns an access token)
 curl -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "gabor@example.com",
-    "password": "password123"
-  }'
+  -d '{"email":"gabor@example.com","password":"password123"}'
+
+# Authenticated request
+curl http://localhost:3000/auth/me -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
-Use the returned access token:
-
-```bash
-curl http://localhost:3000/auth/me \
-  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
-```
-
-Without a valid token, `/auth/me` should return `401 Unauthorized`.
+Without a valid token, `/auth/me` returns `401 Unauthorized`.
 
 ## Current Backend API
 
@@ -406,9 +421,8 @@ DELETE /media/:id
 - `description` — optional
 - `category` — optional
 
-The `type` field must be sent before `file` in the form. Multer resolves the
-storage folder while it is still parsing the multipart stream, so it only
-sees fields that arrived earlier in the request.
+The `type` field must be sent before `file` in the form, because the upload
+handler resolves the storage folder while the multipart stream is still parsing.
 
 Maximum upload size per type:
 
@@ -422,12 +436,10 @@ Uploads exceeding the limit for the selected type are rejected with `400 Bad Req
 responses include a `fileUrl` field (e.g. `/uploads/photos/<uuid>.jpg`) that
 points directly at the stored file.
 
-Uploaded files are served locally from `/uploads/...` as a static file mount
-(`backend/uploads` mapped to `/uploads`). This is an MVP/local-development
-approach: file requests under `/uploads` are **not** JWT-protected, so anyone
+Uploaded files are served from `/uploads/...` as a static file mount
+(`backend/uploads` mapped to `/uploads`) and are **not** JWT-protected — anyone
 who knows or guesses a `fileUrl` can access the file. This is intentional for
-the local MVP scope and will be replaced with protected/signed file endpoints
-in a future milestone.
+the local MVP scope.
 
 `DELETE /media/:id` also removes the media item's local file from disk. If the
 file is already missing, deletion still succeeds and the database record is
@@ -449,13 +461,18 @@ homestreamlab/
 
 ## Future Improvements
 
-Not part of the first MVP:
+Out of scope for the current project. Local Docker images and the LAN-only k3s
+deployment already exist and are **not** in this list.
+
+Managed cloud / public hosting:
 
 - AWS S3 storage
-- Dockerized full application
-- EKS deployment
 - RDS PostgreSQL
+- EKS deployment
 - CloudFront
+
+Application features:
+
 - Thumbnail generation
 - Admin dashboard
 - Sharing links
@@ -468,4 +485,4 @@ Not part of the first MVP:
 
 The goal of this project is to practice and demonstrate full-stack development with a clean, understandable and portfolio-ready application.
 
-The first version focuses on a simple local MVP before adding cloud infrastructure or advanced media processing.
+It is a local-first MVP with a real infrastructure-as-code and gated home-lab delivery path. Managed cloud infrastructure and advanced media processing remain out of scope.
