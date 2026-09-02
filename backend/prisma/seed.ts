@@ -10,7 +10,11 @@ const prisma = new PrismaClient();
 const DEMO_USER_EMAIL = 'demo@homestreamlab.com';
 const DEMO_USER_PASSWORD = 'Password123!';
 
-const SEED_ASSETS_ROOT = join(__dirname, 'seed-assets');
+// Resolve seed assets from the backend process working directory (the stable
+// application root) so both local development (`backend/`) and the production
+// container (`/app`) find them under `prisma/seed-assets`. After Nest build,
+// `__dirname` would be `dist/prisma`, where the assets are not copied.
+const SEED_ASSETS_ROOT = join(process.cwd(), 'prisma', 'seed-assets');
 
 interface DemoMediaFixture {
   title: string;
